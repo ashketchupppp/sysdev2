@@ -8,6 +8,8 @@ class StoreAPIsUnitTest(unittest.TestCase):
     def test_getOrders(self):
         """
             Tests all subclasses of the StoreAPI class, ensures their getOrders method returns data in the correct format.
+            StoreAPI is an abstract class and so could be used to implement many different APIs which would all return
+            different data. The implementors of this class must all process that data and return it in a common format.
         """
         schema = {
             "name" : "",
@@ -24,6 +26,7 @@ class StoreAPIsUnitTest(unittest.TestCase):
                 }
             ]
         }
+        
         for StoreAPIImplementer in list(StoreAPI.__subclasses__()):
             APIInstance = StoreAPIImplementer()
             orders = APIInstance.getOrders()
