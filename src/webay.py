@@ -3,7 +3,7 @@ import random
 from flask import Flask, json, jsonify
 app = Flask(__name__)
 
-def items():
+def Items():
     return [
         {'id': '36d05424-1afb-4ed7-ac28-f37ec34e9772', 'name': 'Sony Playstation 4', 'price': 131.01}, 
         {'id': 'bb124d3b-09e0-4c8d-a141-7a37c73fd140', 'name': 'Headphones', 'price': 119.08}, 
@@ -22,22 +22,22 @@ def items():
     ]
 
 
-def addresses():
+def Addresses():
     return [
-        {'id': '592beaa6-00a4-4c46-b3e3-8d103ebd749a', 'addressLineOne': 'Bath and North East Somerset', 'addressLineTwo': 'Icantbearsedtomakeupmoredatatown', 'country': 'United Kingdom', 'streetNameAndNumb    er': '19 Madaline Harbors', 'postcode': 'DT2 9HZ'},
-        {'id': '2b5f2a53-fd19-492f-9680-d70d8ca4233d', 'addressLineOne': 'Bath and North East Somerset', 'addressLineTwo': 'Geoffreystown', 'country': 'United Kingdom', 'streetNameAndNumber': '1 Madaline Ha    rbors', 'postcode': 'DT2 9HZ'},
-        {'id': '7fd9d4d0-3326-419b-8890-9c456c5cf5c5', 'addressLineOne': 'Bedfordshire', 'addressLineTwo': 'Junstown', 'country': 'United Kingdom', 'streetNameAndNumber': '9 Madaline Harbors', 'postcode': '    DT2 9HA'},
+        {'id': '592beaa6-00a4-4c46-b3e3-8d103ebd749a', 'addressLineOne': 'Bath and North East Somerset', 'addressLineTwo': 'Icantbearsedtomakeupmoredatatown', 'country': 'United Kingdom', 'streetNameAndNumber': '19 Madaline Harbors', 'postcode': 'DT2 9HZ'},
+        {'id': '2b5f2a53-fd19-492f-9680-d70d8ca4233d', 'addressLineOne': 'Bath and North East Somerset', 'addressLineTwo': 'Geoffreystown', 'country': 'United Kingdom', 'streetNameAndNumber': '1 Madaline Harbors', 'postcode': 'DT2 9HZ'},
+        {'id': '7fd9d4d0-3326-419b-8890-9c456c5cf5c5', 'addressLineOne': 'Bedfordshire', 'addressLineTwo': 'Junstown', 'country': 'United Kingdom', 'streetNameAndNumber': '9 Madaline Harbors', 'postcode': 'DT2 9HA'},
         {'id': '7218088f-7d69-4090-85be-5f373996fe94', 'addressLineOne': 'Bedford', 'addressLineTwo':'Wiktorstown', 'country': 'United Kingdom', 'streetNameAndNumber': '89 Madaline Harbors', 'postcode': 'DT2 9HG'},
-        {'id': '737952e3-020f-4e1a-a23f-e7c41c81b41c', 'addressLineOne': 'Berkshire', 'addressLineTwo': 'Nabeelstown', 'country': 'United Kingdom', 'streetNameAndNumber': '42 Madaline Harbors', 'postcode':     'DT2 9HH'},
-        {'id': '56a2372d-4ae8-4a75-94cc-ed36e62d3b00', 'addressLineOne': 'Blackburn with Darwen', 'addressLineTwo': 'Trixiestown', 'country': 'United Kingdom', 'streetNameAndNumber': '39 Madaline Harbors',     'postcode': 'DT2 9LZ'},
-        {'id': '8d673180-959b-44bb-b239-d7c42e3188cb', 'addressLineOne': 'Blackpool', 'addressLineTwo': 'Evangelinestown', 'country': 'United Kingdom', 'streetNameAndNumber': '11 Madaline Harbors', 'postcod    e': 'DT2 9DZ'},
-        {'id': '8bdfc433-45a1-454a-ab96-ef6e36cf23e5', 'addressLineOne': 'Bournemouth, Christchurch and Poole', 'addressLineTwo': 'Arunstown', 'country': 'United Kingdom', 'streetNameAndNumber': '74 Madalin    e Harbors', 'postcode': 'DT2 9GZ'},
+        {'id': '737952e3-020f-4e1a-a23f-e7c41c81b41c', 'addressLineOne': 'Berkshire', 'addressLineTwo': 'Nabeelstown', 'country': 'United Kingdom', 'streetNameAndNumber': '42 Madaline Harbors', 'postcode': 'DT2 9HH'},
+        {'id': '56a2372d-4ae8-4a75-94cc-ed36e62d3b00', 'addressLineOne': 'Blackburn with Darwen', 'addressLineTwo': 'Trixiestown', 'country': 'United Kingdom', 'streetNameAndNumber': '39 Madaline Harbors', 'postcode': 'DT2 9LZ'},
+        {'id': '8d673180-959b-44bb-b239-d7c42e3188cb', 'addressLineOne': 'Blackpool', 'addressLineTwo': 'Evangelinestown', 'country': 'United Kingdom', 'streetNameAndNumber': '11 Madaline Harbors', 'postcode': 'DT2 9DZ'},
+        {'id': '8bdfc433-45a1-454a-ab96-ef6e36cf23e5', 'addressLineOne': 'Bournemouth, Christchurch and Poole', 'addressLineTwo': 'Arunstown', 'country': 'United Kingdom', 'streetNameAndNumber': '74 Madaline Harbors', 'postcode': 'DT2 9GZ'},
         {'id': 'a325b858-fc67-4865-bceb-f3d96f98a55a', 'addressLineOne': 'Bournemouth', 'addressLineTwo': 'Serenastown', 'country': 'United Kingdom', 'streetNameAndNumber': '79 Madaline Harbors','postcode': 'DT2 5DS'},
-        {'id': 'd2d11ed0-b1f1-4a19-aa56-da0f74ff8ded', 'addressLineOne': 'Brighton and Hove', 'addressLineTwo': 'Franciscostown', 'country': 'United Kingdom', 'streetNameAndNumber': '75 Madaline Harbors', '    postcode': 'DT2 9DH'},
-        {'id': '0a1b64b2-f411-45e5-868e-1f30c9b5439c', 'addressLineOne': 'Bristol', 'addressLineTwo': 'Jaidonstown', 'country': 'United Kingdom', 'streetNameAndNumber': '3 Madaline Harbors', 'postcode': 'DT    2 9HQ'}
+        {'id': 'd2d11ed0-b1f1-4a19-aa56-da0f74ff8ded', 'addressLineOne': 'Brighton and Hove', 'addressLineTwo': 'Franciscostown', 'country': 'United Kingdom', 'streetNameAndNumber': '75 Madaline Harbors', 'postcode': 'DT2 9DH'},
+        {'id': '0a1b64b2-f411-45e5-868e-1f30c9b5439c', 'addressLineOne': 'Bristol', 'addressLineTwo': 'Jaidonstown', 'country': 'United Kingdom', 'streetNameAndNumber': '3 Madaline Harbors', 'postcode': 'DT2 9HQ'}
     ]
 
-def users():
+def Users():
     return [
         {'id': '4c8e3056-b6f8-4fe3-b1f7-090930056d38', 'name': 'Roscoe Pike', 'email': 'RoscoePike@hotmail.com'},
         {'id': '95c3dd8b-00d3-4eec-a471-42d6506b04b9', 'name': 'Geoffrey Noel', 'email': 'GeoffreyNoel@hotmail.com'},
@@ -52,28 +52,41 @@ def users():
         {'id': '0e862ec6-030d-438f-bbf7-3f050bfa27b8', 'name': 'Jaidon Plant', 'email': 'JaidonPlant@hotmail.com'}
     ]
 
-def generateRandomisedOrder():
-    numItems = random.randint(1, 3)
-    selectedItems = []
-    for i in range(numItems):
-        selectedItems.append(random.choice(items()))
-    selectedIndex = random.randint(0, len(users()) - 1)
-    return  {
-        "id" : uuid.uuid4(),
-        "user" : users()[selectedIndex],
-        "address" : addresses()[selectedIndex],
-        "items" : selectedItems
-    }
+def generateOrders():
+    orders = []
+    numItems = 1
+    itemIndex = 0
+    items = Items()
+    users = Users()
+    addresses = Addresses()
+    for i in range(len(users)):
+        selectedItems = []
+        for i in range(numItems):
+            print(itemIndex)
+            selectedItems.append(items[itemIndex])
+            itemIndex += 1
+        orders.append({
+            "id" : uuid.uuid4(),
+            "user" : users[i],
+            "address" : addresses[i],
+            "items" : selectedItems
+        })
+        
+        numItems += 1
+        if numItems == 4:
+            numItems = 1
+        if itemIndex > len(items) - 2:
+            itemIndex = 0
+    return orders
 
 @app.route('/orders')
 def orderRoute():
-    numberOrders = random.randint(1, 3)
-    orders = [generateRandomisedOrder() for x in range(numberOrders)]
+    orders = generateOrders()
     return jsonify(orders)
 
 @app.route('/listings')
 def itemRoute():
-    return jsonify(items())
+    return jsonify(Items())
 
 if __name__ == '__main__':
     app.run()

@@ -1,4 +1,5 @@
 from urllib.request import urlopen
+import sqlite3
 
 def getFileContents(filepath):
     fileHandle = open(filepath, "r")

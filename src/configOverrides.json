@@ -1,7 +1,0 @@
-{
-    "apis" : {
-        "Ebay" : {
-            "apiRoot" : "https://localhost:5000"
-        }
-    }
-}            

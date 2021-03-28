@@ -7,14 +7,17 @@ class SQL:
     def createTableFromDefinition(self, tableName, tableDefinition):
         columnStr = ", ".join([f"{column} {tableDefinition[column]}" for column in tableDefinition])
         return f"CREATE TABLE {tableName} ({columnStr})"
-    
+
     @classmethod
-    def select(self, columnsToSelect, table, whereStr=None):
+    def select(self, columnsToSelect, table, joins=None, where=None):
         columnStr = ", ".join(columnsToSelect)
-        if whereStr != None:
-            return f'SELECT {columnStr} FROM {table} WHERE {whereStr}'
-        else:
-            return f'SELECT {columnStr} FROM {table}'
+        whereStr = ""
+        joinStr = ""
+        if where != None:
+            whereStr = f'WHERE ({where})'
+        if joins != None:
+            joinStr = " ".join(joins)
+        return f'SELECT {columnsToSelect} FROM {table} {joinStr} {whereStr}'
     
     @classmethod
     def numberRows(self, tableName):
@@ -27,6 +30,10 @@ class SQL:
     @classmethod
     def insertInto(self, tableName, columnsValueDict):
         columnString = ", ".join(columnsValueDict)
+        # wrap all the strings in quotes
+        for col in columnsValueDict:
+            if type(columnsValueDict[col]) == str:
+                columnsValueDict[col] = f'"{columnsValueDict[col]}"'
         valueString = ", ".join([str(columnsValueDict[key]) for key in columnsValueDict])
         return f'INSERT INTO {tableName} ({columnString}) VALUES ({valueString});'
 
@@ -36,6 +43,7 @@ class OnlineStoreDatabase:
     orderTable = 'orders'
     customerTable = 'customer'
     itemTable = 'items'
+    orderListingLinkTable = "orderListingLink"
     
     databaseDefinition = {
         "tables" : {
@@ -47,25 +55,26 @@ class OnlineStoreDatabase:
                 "email" : "VARCHAR PRIMARY KEY"
             },
             itemTable : {
-                "id" : "INTEGER PRIMARY KEY AUTOINCREMENT",
-                "name" : "VARCHAR",
-                "price" : "DOUBLE",
+                "name" : "VARCHAR PRIMARY KEY",
                 "stock" : "INTEGER",
                 "location" : "INTEGER"
             },
             listingTable : {
-                "itemID" : "INTEGER",
+                "itemID" : "VARCHAR",
                 "storeID" : f"VARCHAR",
+                "price" : "DOUBLE",
                 f"FOREIGN KEY (storeID) REFERENCES {storeTable}(name)" : "",
-                f"FOREIGN KEY (itemID) REFERENCES {itemTable}(id)" : "",
+                f"FOREIGN KEY (itemID) REFERENCES {itemTable}(name)" : "",
                 "PRIMARY KEY (itemID, storeID)" : ""
             },
-            "orderItemLink" : {
-                "orderID" : f"INTEGER",
-                "listingID" : f"INTEGER",
-                "PRIMARY KEY (orderID, listingID)" : "",
+            orderListingLinkTable : {
+                "linkID" : "INTEGER PRIMARY KEY AUTOINCREMENT",
+                "orderID" : "INTEGER",
+                "itemID" : "VARCHAR",
+                "storeID" : "VARCHAR",
                 f"FOREIGN KEY (orderID) REFERENCES {orderTable}(id)" : "",
-                f"FOREIGN KEY (listingID) REFERENCES {listingTable}(id)" : ""
+                f"FOREIGN KEY (itemID) REFERENCES {listingTable}(itemID)" : "",
+                f"FOREIGN KEY (storeID) REFERENCES {listingTable}(storeID)" : "",
             },
             orderTable : {
                 "id" : "INTEGER PRIMARY KEY AUTOINCREMENT",
@@ -81,23 +90,6 @@ class OnlineStoreDatabase:
         }
     }
     
-    presetItems = [
-        {'name': 'Sony Playstation 4', 'price': 131.01, 'location' : 1}, 
-        {'name': 'Headphones', 'price': 119.08, 'location' : 2}, 
-        {'name': 'Wireless Mouse', 'price': 134.12, 'location' : 3}, 
-        {'name': 'Nintendo Switch', 'price': 6.4, 'location' : 4}, 
-        {'name': 'iPhone 7 Plus', 'price': 64.4, 'location' : 5}, 
-        {'name': 'Galaxy S9 Edge', 'price': 47.76, 'location' : 6}, 
-        {'name': 'Laptop', 'price': 210.37, 'location' : 7}, 
-        {'name': 'Chair', 'price': 378.46, 'location' : 8}, 
-        {'name': 'Trumpet', 'price': 282.24, 'location' : 9}, 
-        {'name': 'Plate', 'price': 8.73, 'location' : 10}, 
-        {'name': 'Mug', 'price': 402.51, 'location' : 11}, 
-        {'name': 'Door', 'price': 283.64, 'location' : 12}, 
-        {'name': 'Original Van Gogh', 'price': 33.92, 'location' : 13}, 
-        {'name': 'Candle', 'price': 99.06, 'location' : 14}
-    ]
-    
     def __init__(self, databaseFile):
         self.databaseFile = databaseFile
         self.connection = None
@@ -106,34 +98,43 @@ class OnlineStoreDatabase:
         
         # setup the database with the tables
         for table in OnlineStoreDatabase.databaseDefinition['tables']:
-            if not self.hasTable(table) or not self.tableHasColumns(table, [column for column in table]):
+            if not self.hasTable(table):
                 query = SQL.createTableFromDefinition(table, OnlineStoreDatabase.databaseDefinition['tables'][table])
                 self.executeQuery(query)
                 
-    def addOrder(self, orderDict):
-        # if we don't have the customers email, add them to the database
-        pass
-    
-    def addStore(self, name):
-        self.executeQuery(SQL.insertInto(OnlineStoreDatabase.storeTable, {'name' : f'"{name}"'}))
+    def insert(self, table, values : dict):
+        self.executeQuery(SQL.insertInto(table, values))
+        return self.cursor.lastrowid
+        
+    def select(self, table, columns="*", whereStr=None, joins=None):
+        return [x for x in self.executeQuery(SQL.select(columns, table, where=whereStr, joins=joins))]
                 
-    def addListing(self, name, price, storeID, stock=0):
+    def addListing(self, itemID, storeID):
         values = {
-            "name" : f'"{name}"',
-            "stock" : stock,
-            "price" : price,
-            "storeID" : f'"{storeID}"'
+            "storeID" : storeID,
+            "itemID" : itemID
         }
         self.executeQuery(SQL.insertInto(OnlineStoreDatabase.listingTable, values))
         
     def getListings(self):
         result = self.executeQuery(SQL.select("*", OnlineStoreDatabase.listingTable))
         return [x for x in result]
+    
+    def hasItem(self, name):
+        whereStr = f'name="{name}"'
+        return bool([x for x in self.executeQuery(SQL.select("*", OnlineStoreDatabase.itemTable, whereStr=whereStr))])
         
-    def hasListing(self, name, price, store):
-        whereStr = f'name="{name}"' # , price={price}, storeID="{store}"
+    def hasListing(self, itemID : int, storeID : int):
+        whereStr = f'storeID={storeID}, itemID={itemID}'
         return bool([x for x in self.executeQuery(SQL.select("*", OnlineStoreDatabase.listingTable, whereStr=whereStr))])
-        
+    
+    def has(self, table, whereValues={}, joinList=None):
+        for val in whereValues:
+            if type(whereValues[val]) == str:
+                whereValues[val] = f'"{whereValues[val]}"'
+        whereStr = ", ".join([f'{key}={whereValues[key]}' for key in whereValues])
+        return bool(self.select(table, whereStr=whereStr, joins=joinList))
+    
     def close(self):
         self.connection.close()
     
@@ -143,7 +144,7 @@ class OnlineStoreDatabase:
     
     def isConnected(self):
         return True if self.connection != None else False
-    
+
     def tableHasColumns(self, table, columns):
         tableColumns = self.cursor.execute(SQL.tableColumns(table))
         for col in tableColumns:
@@ -152,7 +153,7 @@ class OnlineStoreDatabase:
         return True
     
     def tableHasRow(self, tableName, whereColumns):
-        result = [x for x in self.executeQuery(SQL.select("*", tableName, whereColumns))]
+        result = [x for x in self.executeQuery(SQL.select("*", tableName, where=whereColumns))]
         return True if len(result) > 0 else False
     
     def hasTable(self, tableName):

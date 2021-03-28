@@ -48,7 +48,8 @@ class StoreAPI(ABC):
             [
                 {
                     "name" : "",
-                    "price" : ""
+                    "price" : "",
+                    "storeID" : ""
                 }
             ]
             It is up to the implementer of this class to process the data and put it into this structure.
@@ -58,6 +59,7 @@ class Ebay(StoreAPI):
     defaultConfiguration = {
         'apiRoot' : 'http://localhost:5000'
     }
+    name = "Ebay"
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -69,8 +71,12 @@ class Ebay(StoreAPI):
 
     def getOrders(self):
         orderData = json.loads(doGet(f"{self.apiRoot}/orders"))
+        for order in orderData:
+            order['storeID'] = Ebay.name
         return orderData
     
     def getListings(self):
         itemData = json.loads(doGet(f"{self.apiRoot}/listings"))
+        for item in itemData:
+            item['storeID'] = Ebay.name
         return itemData
