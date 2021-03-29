@@ -1,8 +1,9 @@
 import os.path
 import json
 from sqlite3.dbapi2 import IntegrityError, OperationalError
+import smtplib, ssl
 
-import src.Util
+from src.Util import *
 from src.OnlineStoreDatabase import OnlineStoreDatabase
 from src.StoreAPIs import Ebay
 
@@ -22,6 +23,25 @@ class DataManager:
             "Ebay" : {
                 "apiRoot" : "http://localhost:5000"
             }
+        },
+        "itemList" : [
+            {'stock': 10, 'name': 'Sony Playstation 4', 'location' : 1}, 
+            {'stock': 10, 'name': 'Headphones', 'location' : 2}, 
+            {'stock': 10, 'name': 'Wireless Mouse', 'location' : 3}, 
+            {'stock': 10, 'name': 'Nintendo Switch', 'location' : 4}, 
+            {'stock': 10, 'name': 'iPhone 7 Plus', 'location' : 5}, 
+            {'stock': 10, 'name': 'Galaxy S9 Edge', 'location' : 6}, 
+            {'stock': 10, 'name': 'Laptop', 'location' : 7}, 
+            {'stock': 10, 'name': 'Chair', 'location' : 8}, 
+            {'stock': 10, 'name': 'Trumpet', 'location' : 9}, 
+            {'stock': 10, 'name': 'Plate', 'location' : 10}, 
+            {'stock': 10, 'name': 'Mug', 'location' : 11}, 
+            {'stock': 10, 'name': 'Door', 'location' : 12}, 
+            {'stock': 10, 'name': 'Original Van Gogh', 'location' : 13}, 
+            {'stock': 10, 'name': 'Candle', 'location' : 14}
+        ],
+        "email" : {
+            "orderUpdateEmail" : "company@noreply.com"
         }
     }
 
@@ -29,52 +49,69 @@ class DataManager:
         Ebay.name : Ebay
     }
     
-    presetItems = [
-        {'stock': 10, 'name': 'Sony Playstation 4', 'location' : 1}, 
-        {'stock': 10, 'name': 'Headphones', 'location' : 2}, 
-        {'stock': 10, 'name': 'Wireless Mouse', 'location' : 3}, 
-        {'stock': 10, 'name': 'Nintendo Switch', 'location' : 4}, 
-        {'stock': 10, 'name': 'iPhone 7 Plus', 'location' : 5}, 
-        {'stock': 10, 'name': 'Galaxy S9 Edge', 'location' : 6}, 
-        {'stock': 10, 'name': 'Laptop', 'location' : 7}, 
-        {'stock': 10, 'name': 'Chair', 'location' : 8}, 
-        {'stock': 10, 'name': 'Trumpet', 'location' : 9}, 
-        {'stock': 10, 'name': 'Plate', 'location' : 10}, 
-        {'stock': 10, 'name': 'Mug', 'location' : 11}, 
-        {'stock': 10, 'name': 'Door', 'location' : 12}, 
-        {'stock': 10, 'name': 'Original Van Gogh', 'location' : 13}, 
-        {'stock': 10, 'name': 'Candle', 'location' : 14}
-    ]
-    
     def __init__(self, configFile=None, configObj=None):
         """ If a config is not passed then attempt to load one from a file, it is then use it.
         """
         if configFile != None:
             if not os.path.isfile(configFile):
                 self.createConfig(configFile)
-            config = json.loads(src.Util.getFileContents(configFile))
+            config = json.loads(getFileContents(configFile))
         elif configObj != None:
             config = configObj
         else:
             self.createConfig(DataManager.configOverridesFile)
-            config = json.loads(src.Util.getFileContents(DataManager.configOverridesFile))
+            config = json.loads(getFileContents(DataManager.configOverridesFile))
         self.loadFromConfig(config)
         self.loadDatabase()
         self.createAPIs()
 
         # go through all the configured APIs and add them to the onlineStore table if we haven't already
         for api in self.apis:
-            if not self.onlineStoreDatabase.tableHasRow(OnlineStoreDatabase.storeTable, f'name="{api}"'):
-                self.onlineStoreDatabase.insert(OnlineStoreDatabase.storeTable, {"name" : api})
+            self.onlineStoreDatabase.addOnlineStore(api)
 
         # add all the items to the database
-        for item in DataManager.presetItems:
-            try:
-                self.onlineStoreDatabase.insert(OnlineStoreDatabase.itemTable, item)
-            except OperationalError as e: # if this fails then the item is already there
-                pass
+        for item in self.itemList:
+            self.onlineStoreDatabase.addItem(name=item['name'], stock=item['stock'], location=item['location'])
         
         self.reload()
+        
+    # Address Labels
+    
+    def printAddressLabel(self, orderID, outputFile):
+        order = self.onlineStoreDatabase.getOrder(orderID)
+        customer = self.onlineStoreDatabase.getCustomer(order['email'])
+        label = f"""{customer['name']}
+{order['streetNameAndNumber']}
+{order['line1']}
+{order['line2']}
+{order['postcode']}
+{order['country']}"""
+        writeToFile(outputFile, label)
+        
+    # Email
+    
+    def sendOrderStatusEmail(self, emailAddress):
+        smtp_server = "smtp.gmail.com"
+        port = 587  # For starttls
+        sender_email = self.orderUpdateEmail
+        password = input("Type your password and press enter: ")
+
+        # Create a secure SSL context
+        context = ssl.create_default_context()
+
+        # Try to log in to server and send email
+        try:
+            server = smtplib.SMTP(smtp_server,port)
+            server.ehlo() # Can be omitted
+            server.starttls(context=context) # Secure the connection
+            server.ehlo() # Can be omitted
+            server.login(sender_email, password)
+            # TODO: Send email here
+        except Exception as e:
+            # Print any error messages to stdout
+            print(e)
+        finally:
+            server.quit() 
         
     # Getting Data
     
@@ -82,11 +119,11 @@ class DataManager:
         """ Queries all configured APIs and updates the internal database with new listings, customers and orders """
         listings = self.getAllListings()
         for listing in listings:
-            self.addListing(listing)
+            self.onlineStoreDatabase.addListing(itemID=listing['name'], storeID=listing['storeID'], price=listing['price'])
 
         orders = self.getAllOrders()
         for order in orders:
-            self.addOrder(order)
+            self.onlineStoreDatabase.addOrder(order)
     
     def getAllListings(self):
         listings = []
@@ -100,58 +137,37 @@ class DataManager:
             orders += self.apis[api].getOrders()
         return orders
     
+    # Stored Data
+    
+    def getUnprocessedOrders(self):
+        return self.onlineStoreDatabase.getUnprocessedOrders()
+    
+    def getOrderPackingList(self, orderID):
+        return self.onlineStoreDatabase.getOrderPackingList(orderID)
+    
+    def getAllOrderListingLinks(self):
+        return self.onlineStoreDatabase.getAllOrderListingLinks()
+    
+    def getOrders(self):
+        return self.onlineStoreDatabase.getOrders()
+    
+    def getItems(self):
+        return self.onlineStoreDatabase.getItems()
+    
+    def getCustomers(self):
+        return self.onlineStoreDatabase.getCustomers()
+    
+    
     # Adding new data
     
     def addOrder(self, orderData):
-        # create new customer entries
-        self.addCustomer(orderData['user'])
-
-        # create new order entry
-        orderColumnValues = {
-            "status" : "unprocessed",
-            "line1" : orderData['address']['addressLineOne'],
-            "line2" : orderData['address']['addressLineTwo'],
-            "country" : orderData['address']['country'],
-            "streetNameAndNumber" : orderData['address']['streetNameAndNumber'],
-            "postcode" : orderData['address']['postcode'],
-            "customerEmail" : orderData['user']['email']
-        }
-        try:
-            orderID = self.onlineStoreDatabase.insert(OnlineStoreDatabase.orderTable, orderColumnValues)
-        except Exception as e:
-            pass
-        
-        # add links between the order and the listings
-        for item in orderData['items']:
-            orderListingLinkColumnValues = {
-                "orderID" : orderID,
-                "storeID" : orderData['storeID'],
-                "itemID" : item['name']
-            }
-            try:
-                self.onlineStoreDatabase.insert(OnlineStoreDatabase.orderListingLinkTable, orderListingLinkColumnValues)
-            except Exception as e:
-                pass
+        return self.onlineStoreDatabase.addOrder(orderData)
             
-    def addCustomer(self, customerData):
-        customerColumnValues = {
-            'email' : customerData['email'],
-            'name' : customerData['name']
-        }
-        try:
-            self.onlineStoreDatabase.insert(OnlineStoreDatabase.customerTable, customerColumnValues)
-        except Exception as e:
-            pass
+    def addCustomer(self, name, email):
+        return self.onlineStoreDatabase.addCustomer(name, email)
     
-    def addListing(self, listingData):
-        valueDict = {
-            'itemID' : listingData['name'],
-            'storeID' : listingData['storeID']
-        }
-        try:
-            self.onlineStoreDatabase.insert(OnlineStoreDatabase.listingTable, valueDict)
-        except Exception as e:
-            pass
+    def addListing(self, itemID, storeID, price):
+        return self.onlineStoreDatabase.addListing(itemID, storeID, price)
         
     # Setup
         
@@ -165,7 +181,7 @@ class DataManager:
         self.apis = apiObjs
             
     def createConfig(self, filepath):
-        src.Util.writeToFile(filepath, json.dumps(DataManager.defaultConfiguration))
+        writeToFile(filepath, json.dumps(dict(DataManager.defaultConfiguration)))
             
     def loadFromConfig(self, configDict):
         """ Load the config from the filepath passed, use defaults if any values are absent from the config file """

@@ -1,21 +1,3 @@
-from urllib.request import urlopen
-import sqlite3
-
-def getFileContents(filepath):
-    fileHandle = open(filepath, "r")
-    contents = fileHandle.read()
-    fileHandle.close()
-    return contents
-
-def writeToFile(filepath, contents):
-    fileHandle = open(filepath, "w")
-    fileHandle.write(contents)
-    fileHandle.close()
-    
-def doGet(url):
-    response = urlopen(url)
-    return response.read().decode()
-
 class Struct:
     """ In JavaScript you can load dictionaries as JavaScript objects and access their values
         using dot notation "class.attribute" instead of "class['attribute']".
@@ -100,3 +82,14 @@ class Struct:
 
     def __unicode__(self):
         return unicode(repr(self.__dict__))
+
+
+exampleDict = {
+    "a" : 1,
+    "b" : {
+        "c" : "string"
+    }
+}
+
+d = Struct(**exampleDict)
+print(dict(d))

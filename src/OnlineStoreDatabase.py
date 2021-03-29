@@ -1,6 +1,6 @@
 import sqlite3
 from sqlite3.dbapi2 import IntegrityError
-from src.SQLiteDB import SQLiteDB
+from src.SQLiteDB import SQLiteDB, SQL
 
 
 class OnlineStoreDatabase:
@@ -131,8 +131,14 @@ class OnlineStoreDatabase:
             items += self.db.select(OnlineStoreDatabase.itemTable, whereDict={ "name" : itemID })
         return items
     
+    def getAllOrderListingLinks(self):
+        return [x for x in self.db.select(OnlineStoreDatabase.orderListingLinkTable)]
+    
     def getOrders(self):
         return [x for x in self.db.select(OnlineStoreDatabase.orderTable)]
+    
+    def getOrder(self, orderID):
+        return self.db.getRow(OnlineStoreDatabase.orderTable, id=orderID)
     
     def getItems(self):
         return [x for x in self.db.select(OnlineStoreDatabase.itemTable)]
@@ -185,8 +191,7 @@ class OnlineStoreDatabase:
         return True
     
     def tableHasRow(self, tableName, whereColumns):
-        result = [x for x in self.executeQuery(SQL.select("*", tableName, where=whereColumns))]
-        return True if len(result) > 0 else False
+        return self.db.tableHasRow(tableName, whereColumns)
     
     def hasTable(self, tableName):
         try:

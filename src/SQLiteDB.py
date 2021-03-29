@@ -136,6 +136,10 @@ class SQLiteDB:
             return True
         except sqlite3.OperationalError as e:
             return False
+        
+    def tableHasRow(self, tableName, whereColumns):
+        result = [x for x in self.executeQuery(SQL.select("*", tableName, where=whereColumns))]
+        return True if len(result) > 0 else False
     
     # Low-Level SQL Functions
                 

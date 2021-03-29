@@ -13,6 +13,14 @@ class StoreAPI(ABC):
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
+            
+    def apiCall(self, apiCallFunction):
+        def wrapper():
+            result = apiCallFunction()
+            for i in result:
+                i['storeID'] = self.name
+            return result
+        return wrapper
     
     @abstractmethod
     def getOrders(self):
@@ -54,12 +62,13 @@ class StoreAPI(ABC):
             ]
             It is up to the implementer of this class to process the data and put it into this structure.
         """
+
     
 class Ebay(StoreAPI):
     defaultConfiguration = {
         'apiRoot' : 'http://localhost:5000'
     }
-    name = "Ebay"
+    name = 'Ebay'
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
