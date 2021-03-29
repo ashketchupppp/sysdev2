@@ -47,51 +47,49 @@ class DataManagerUnitTest(unittest.TestCase):
         self.assertEqual(len(DataManager.presetItems), len(result))
         
     def test_addsListingsFromAPIs(self):
-        """ The DataManager should go through all the APIs and add their item listings to the database if they aren't there already
+        """ When created, the DataManager should go through all the APIs and add their item listings to the database if they aren't there already
         """
         result = DataManagerUnitTest.dm.onlineStoreDatabase.select(OnlineStoreDatabase.listingTable)
         self.assertEqual(len(DataManagerUnitTest.dm.getAllListings()), len(result))
 
     def test_addsNewCustomersFromAPIs(self):
-        """ The DataManager should go through all the new orders from the APIs and add any new customers to the database
+        """ When created, the DataManager should go through all the new orders from the APIs and add any new customers to the database
         """
         result = DataManagerUnitTest.dm.onlineStoreDatabase.select(OnlineStoreDatabase.customerTable)
         customers = set([key['user']['email'] for key in DataManagerUnitTest.dm.getAllOrders()])
         self.assertEqual(len(customers), len(result))
 
     def test_addsNewOrdersFromAPIs(self):
-        """ The DataManager should go through all the new orders from the APIs and add any new orders to the database
+        """ When created, the DataManager should go through all the new orders from the APIs and add any new orders to the database
         """
         result = DataManagerUnitTest.dm.onlineStoreDatabase.select(OnlineStoreDatabase.orderTable)
         self.assertEqual(len(DataManagerUnitTest.dm.getAllOrders()), len(result))
 
     def test_addsLinkBetweenOrderAndListing(self):
-        """ The DataManager should go through all the new orders from the APIs and link them to listings
+        """ When created, the DataManager should go through all the new orders from the APIs and link them to listings
         """
         result = DataManagerUnitTest.dm.onlineStoreDatabase.select(OnlineStoreDatabase.orderListingLinkTable)
         orders = DataManagerUnitTest.dm.getAllOrders()
         # one link per item in an order, count the number of links expected
         numLinks = reduce(lambda x, y : x + y, [len(x['items']) for x in orders])
         self.assertEqual(numLinks, len(result))
+        
+    def test_addCustomerAddsACustomer(self):
+        """ The addCustomer method should add a customer
+        """
+        DataManagerUnitTest.dm.addCustomer({"email" : "johndoe@email.com", "name" : "John Doe"})
+        result = DataManagerUnitTest.dm.onlineStoreDatabase.select(OnlineStoreDatabase.customerTable)
+        self.assertEqual(1, len(result))
 
     def setUp(self):
         removeLeftOverDbFiles()
-        DataManagerUnitTest.dm = DataManager()
+        DataManagerUnitTest.dm = DataManager(configObj=DataManagerUnitTest.testConfig)
         
     def tearDown(self):
         if os.path.isfile(DataManager.configOverridesFile):
             os.remove(DataManager.configOverridesFile)
         
-        removeLeftOverDbFiles()
-            
-        DataManagerUnitTest.dm = None
-        
-    @classmethod
-    def setUpClass(self):
-        removeLeftOverDbFiles()
-        
-    @classmethod
-    def tearDownClass(self):
+        del DataManagerUnitTest.dm
         removeLeftOverDbFiles()
     
 if __name__ == "__main__":

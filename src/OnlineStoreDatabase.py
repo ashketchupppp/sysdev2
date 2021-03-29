@@ -1,41 +1,7 @@
 import sqlite3
+from sqlite3.dbapi2 import IntegrityError
+from src.SQLiteDB import SQLiteDB
 
-class SQL:
-    """ Utility class to help with constructing SQL queries
-    """
-    @classmethod
-    def createTableFromDefinition(self, tableName, tableDefinition):
-        columnStr = ", ".join([f"{column} {tableDefinition[column]}" for column in tableDefinition])
-        return f"CREATE TABLE {tableName} ({columnStr})"
-
-    @classmethod
-    def select(self, columnsToSelect, table, joins=None, where=None):
-        columnStr = ", ".join(columnsToSelect)
-        whereStr = ""
-        joinStr = ""
-        if where != None:
-            whereStr = f'WHERE ({where})'
-        if joins != None:
-            joinStr = " ".join(joins)
-        return f'SELECT {columnsToSelect} FROM {table} {joinStr} {whereStr}'
-    
-    @classmethod
-    def numberRows(self, tableName):
-        return f"SELECT count(*) FROM {tableName};"
-    
-    @classmethod
-    def tableColumns(self, tableName):
-        return f"PRAGMA table_info({tableName})"
-    
-    @classmethod
-    def insertInto(self, tableName, columnsValueDict):
-        columnString = ", ".join(columnsValueDict)
-        # wrap all the strings in quotes
-        for col in columnsValueDict:
-            if type(columnsValueDict[col]) == str:
-                columnsValueDict[col] = f'"{columnsValueDict[col]}"'
-        valueString = ", ".join([str(columnsValueDict[key]) for key in columnsValueDict])
-        return f'INSERT INTO {tableName} ({columnString}) VALUES ({valueString});'
 
 class OnlineStoreDatabase:
     storeTable = 'onlineStore'
@@ -57,7 +23,7 @@ class OnlineStoreDatabase:
             itemTable : {
                 "name" : "VARCHAR PRIMARY KEY",
                 "stock" : "INTEGER",
-                "location" : "INTEGER"
+                "location" : "INTEGER UNIQUE"
             },
             listingTable : {
                 "itemID" : "VARCHAR",
@@ -73,8 +39,7 @@ class OnlineStoreDatabase:
                 "itemID" : "VARCHAR",
                 "storeID" : "VARCHAR",
                 f"FOREIGN KEY (orderID) REFERENCES {orderTable}(id)" : "",
-                f"FOREIGN KEY (itemID) REFERENCES {listingTable}(itemID)" : "",
-                f"FOREIGN KEY (storeID) REFERENCES {listingTable}(storeID)" : "",
+                f"FOREIGN KEY (itemID, storeID) REFERENCES {listingTable}(itemID, storeID)" : ""
             },
             orderTable : {
                 "id" : "INTEGER PRIMARY KEY AUTOINCREMENT",
@@ -91,34 +56,101 @@ class OnlineStoreDatabase:
     }
     
     def __init__(self, databaseFile):
-        self.databaseFile = databaseFile
-        self.connection = None
-        self.cursor = None
-        self.connect(databaseFile)
+        self.db = SQLiteDB(databaseFile)
         
         # setup the database with the tables
         for table in OnlineStoreDatabase.databaseDefinition['tables']:
-            if not self.hasTable(table):
-                query = SQL.createTableFromDefinition(table, OnlineStoreDatabase.databaseDefinition['tables'][table])
-                self.executeQuery(query)
-                
-    def insert(self, table, values : dict):
-        self.executeQuery(SQL.insertInto(table, values))
-        return self.cursor.lastrowid
+            self.db.createTable(table, OnlineStoreDatabase.databaseDefinition['tables'][table])
+            
+            
+    # Adding, Updating and Getting Data
+    
+    ## Updating Data
+    
+    def setOrderToShipped(self, orderID):
+        self.db.update(OnlineStoreDatabase.orderTable, {"status" : "shipped"}, {"id" : orderID})
+    
+    ## Adding Data
+    
+    def addCustomer(self, name, email):
+        return self.db.add(OnlineStoreDatabase.customerTable, name=name, email=email)
         
-    def select(self, table, columns="*", whereStr=None, joins=None):
-        return [x for x in self.executeQuery(SQL.select(columns, table, where=whereStr, joins=joins))]
-                
-    def addListing(self, itemID, storeID):
-        values = {
-            "storeID" : storeID,
-            "itemID" : itemID
+    def addItem(self, name, stock, location):
+        return self.db.add(OnlineStoreDatabase.itemTable, name=name, stock=stock, location=location)
+        
+    def addOnlineStore(self, storeName):
+        return self.db.add(OnlineStoreDatabase.storeTable, name=storeName)
+        
+    def addListing(self, itemID, storeID, price):
+        return self.db.add(OnlineStoreDatabase.listingTable, itemID=itemID, storeID=storeID, price=price)
+    
+    def addOrderListingLink(self, orderID, itemID, storeID):
+        return self.db.add(OnlineStoreDatabase.orderListingLinkTable, orderID=orderID, itemID=itemID, storeID=storeID)
+    
+    def addOrder(self, orderDict):
+        # if we don't have this customer yet, add them to the database
+        if not self.getCustomer(orderDict['user']['email']):
+            self.addCustomer(orderDict['user']['name'], orderDict['user']['email'])
+            
+        # if we don't have this listing yet, add it to the database
+        for item in orderDict['items']:
+            self.addListing(item['name'], orderDict['storeID'], item['price'])
+        
+        # add the order to the database
+        dbOrderDict = {
+                "status": "unprocessed",
+                "line1" : orderDict['address']['addressLineOne'],
+                "line2" : orderDict['address']['addressLineTwo'],
+                "country" : orderDict['address']['country'],
+                "streetNameAndNumber" : orderDict['address']["streetNameAndNumber"],
+                "postcode" : orderDict['address']['postcode'],
+                "customerEmail": orderDict['user']['email'],
         }
-        self.executeQuery(SQL.insertInto(OnlineStoreDatabase.listingTable, values))
+        orderRowID = self.db.add(OnlineStoreDatabase.orderTable, dictvalues=dbOrderDict)
+        
+        # add the order-listing links
+        for item in orderDict['items']:
+            self.addOrderListingLink(orderRowID, item['name'], orderDict['storeID'])
+        
+        return orderRowID
+        
+    ## Getting Data
+    
+    def getUnprocessedOrders(self):
+        return [x for x in self.db.select(OnlineStoreDatabase.orderTable, 
+                                          whereDict={"status" : "unprocessed"})]
+    
+    def getOrderPackingList(self, orderID):
+        # get the item listings for the order
+        itemListingsForOrder = [x for x in self.db.select(OnlineStoreDatabase.orderListingLinkTable, 
+                                                  whereDict={ "orderID" : orderID })]
+        # get the actual items from the listings
+        itemIDs = [x['itemID'] for x in itemListingsForOrder]
+        items = []
+        for itemID in itemIDs:
+            items += self.db.select(OnlineStoreDatabase.itemTable, whereDict={ "name" : itemID })
+        return items
+    
+    def getOrders(self):
+        return [x for x in self.db.select(OnlineStoreDatabase.orderTable)]
+    
+    def getItems(self):
+        return [x for x in self.db.select(OnlineStoreDatabase.itemTable)]
+    
+    def getCustomers(self):
+        return [x for x in self.db.select(OnlineStoreDatabase.customerTable)]
+    
+    def getCustomer(self, email):
+        return self.db.getRow(OnlineStoreDatabase.customerTable, email=email)
+    
+    def getOnlineStores(self):
+        return [x for x in self.db.select(OnlineStoreDatabase.storeTable)]
         
     def getListings(self):
-        result = self.executeQuery(SQL.select("*", OnlineStoreDatabase.listingTable))
-        return [x for x in result]
+        return [x for x in self.db.select(OnlineStoreDatabase.listingTable)]
+    
+    def getOrdersListings(self, orderID):
+        return [x for x in self.db.select(OnlineStoreDatabase.orderListingLinkTable, whereDict={"orderID":orderID})]
     
     def hasItem(self, name):
         whereStr = f'name="{name}"'
@@ -162,8 +194,3 @@ class OnlineStoreDatabase:
             return True
         except sqlite3.OperationalError as e:
             return False
-    
-    def executeQuery(self, queryStr):
-        result = self.cursor.execute(queryStr)
-        self.connection.commit()
-        return result
