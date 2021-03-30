@@ -5,8 +5,8 @@ import sqlite3
 import os
 
 import context
-from src.OnlineStoreDatabase import OnlineStoreDatabase
-from src.SQLiteDB import SQL, SQLiteDB
+from OnlineStoreApp.OnlineStoreDatabase import OnlineStoreDatabase
+from OnlineStoreApp.SQLiteDB import SQL, SQLiteDB
 
 exampleOrder = {
     "address":{

@@ -5,10 +5,10 @@ from functools import reduce
 import threading
 
 import context
-from src.DataManager import DataManager
-from src.OnlineStoreDatabase import OnlineStoreDatabase
-from src.Util import getFileContents
-from src.webay import runWebay
+from OnlineStoreApp.DataManager import DataManager
+from OnlineStoreApp.OnlineStoreDatabase import OnlineStoreDatabase
+from OnlineStoreApp.Util import getFileContents
+from OnlineStoreApp.webay import runWebay
 
 def removeLeftOverDbFiles():
     leftOverDB = [path for path in os.listdir() if ".db" in path]
@@ -51,27 +51,31 @@ class DataManagerUnitTest(unittest.TestCase):
         self.assertEqual(len(self.dm.itemList), len(result))
         
     def test_addsListingsFromAPIs(self):
-        """ When created, the DataManager should go through all the APIs and add their item listings to the database if they aren't there already
+        """ When reload is called, the DataManager should go through all the APIs and add their item listings to the database if they aren't there already
         """
+        DataManagerUnitTest.dm.reload()
         result = DataManagerUnitTest.dm.onlineStoreDatabase.getListings()
         self.assertEqual(len(DataManagerUnitTest.dm.getAllListings()), len(result))
 
     def test_addsNewCustomersFromAPIs(self):
-        """ When created, the DataManager should go through all the new orders from the APIs and add any new customers to the database
+        """ When reload is called, the DataManager should go through all the new orders from the APIs and add any new customers to the database
         """
+        DataManagerUnitTest.dm.reload()
         result = DataManagerUnitTest.dm.onlineStoreDatabase.getCustomers()
         customers = set([key['user']['email'] for key in DataManagerUnitTest.dm.getAllOrders()])
         self.assertEqual(len(customers), len(result))
 
     def test_addsNewOrdersFromAPIs(self):
-        """ When created, the DataManager should go through all the new orders from the APIs and add any new orders to the database
+        """ When reload is called, the DataManager should go through all the new orders from the APIs and add any new orders to the database
         """
+        DataManagerUnitTest.dm.reload()
         result = DataManagerUnitTest.dm.onlineStoreDatabase.getOrders()
         self.assertEqual(len(DataManagerUnitTest.dm.getAllOrders()), len(result))
 
     def test_addsLinkBetweenOrderAndListing(self):
-        """ When created, the DataManager should go through all the new orders from the APIs and link them to listings
+        """ When reload is called, the DataManager should go through all the new orders from the APIs and link them to listings
         """
+        DataManagerUnitTest.dm.reload()
         result = DataManagerUnitTest.dm.onlineStoreDatabase.getAllOrderListingLinks()
         orders = DataManagerUnitTest.dm.getAllOrders()
         # one link per item in an order, count the number of links expected

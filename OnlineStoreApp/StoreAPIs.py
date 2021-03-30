@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import json
 
-from src.Util import doGet
+from OnlineStoreApp.Util import doGet
 
 class StoreAPI(ABC):
     """

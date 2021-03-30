@@ -3,8 +3,8 @@ import os
 import sqlite3
 
 import context
-from src.SQLiteDB import SQL, SQLiteDB
-from src.OnlineStoreDatabase import OnlineStoreDatabase
+from OnlineStoreApp.SQLiteDB import SQL, SQLiteDB
+from OnlineStoreApp.OnlineStoreDatabase import OnlineStoreDatabase
 
 class SQLiteDB_UnitTests(unittest.TestCase):
     db = None

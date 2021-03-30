@@ -1,11 +1,11 @@
 import os.path
 import json
 from sqlite3.dbapi2 import IntegrityError, OperationalError
-import smtplib, ssl
 
-from src.Util import *
-from src.OnlineStoreDatabase import OnlineStoreDatabase
-from src.StoreAPIs import Ebay
+from OnlineStoreApp.Util import *
+from OnlineStoreApp.OnlineStoreDatabase import OnlineStoreDatabase
+from OnlineStoreApp.StoreAPIs import Ebay
+from OnlineStoreApp.Email import EmailHandler
 
 class DataManager:
     """
@@ -41,7 +41,8 @@ class DataManager:
             {'stock': 10, 'name': 'Candle', 'location' : 14}
         ],
         "email" : {
-            "orderUpdateEmail" : "company@noreply.com"
+            "orderUpdateEmail" : "company@noreply.com",
+            "orderUpdatePassword" : "outfiurfkimfri" # need to figure out a way of NOT storing passwords in plaintext
         }
     }
 
@@ -50,7 +51,7 @@ class DataManager:
     }
     
     def __init__(self, configFile=None, configObj=None):
-        """ If a config is not passed then attempt to load one from a file, it is then use it.
+        """ If a config is not passed then attempt to load one from a file
         """
         if configFile != None:
             if not os.path.isfile(configFile):
@@ -64,6 +65,9 @@ class DataManager:
         self.loadFromConfig(config)
         self.loadDatabase()
         self.createAPIs()
+        
+        # create the email handler (broken)
+        # self.emailHandler = EmailHandler(self.email['orderUpdateEmail'], self.email['orderUpdatePassword'])
 
         # go through all the configured APIs and add them to the onlineStore table if we haven't already
         for api in self.apis:
@@ -72,8 +76,6 @@ class DataManager:
         # add all the items to the database
         for item in self.itemList:
             self.onlineStoreDatabase.addItem(name=item['name'], stock=item['stock'], location=item['location'])
-        
-        self.reload()
         
     # Address Labels
     
@@ -87,31 +89,6 @@ class DataManager:
 {order['postcode']}
 {order['country']}"""
         writeToFile(outputFile, label)
-        
-    # Email
-    
-    def sendOrderStatusEmail(self, emailAddress):
-        smtp_server = "smtp.gmail.com"
-        port = 587  # For starttls
-        sender_email = self.orderUpdateEmail
-        password = input("Type your password and press enter: ")
-
-        # Create a secure SSL context
-        context = ssl.create_default_context()
-
-        # Try to log in to server and send email
-        try:
-            server = smtplib.SMTP(smtp_server,port)
-            server.ehlo() # Can be omitted
-            server.starttls(context=context) # Secure the connection
-            server.ehlo() # Can be omitted
-            server.login(sender_email, password)
-            # TODO: Send email here
-        except Exception as e:
-            # Print any error messages to stdout
-            print(e)
-        finally:
-            server.quit() 
         
     # Getting Data
     

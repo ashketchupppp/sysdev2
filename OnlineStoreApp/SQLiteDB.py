@@ -1,5 +1,5 @@
 import sqlite3
-from sqlite3.dbapi2 import IntegrityError
+from sqlite3.dbapi2 import IntegrityError, OperationalError
 
 class SQL:
     """ Utility class to help with constructing SQL queries
@@ -127,7 +127,7 @@ class SQLiteDB:
             query = SQL.createTableFromDefinition(tableName, tableDefinition)
             self.executeQuery(query)
             return True
-        except IntegrityError:
+        except OperationalError:
             return None
         
     def hasTable(self, tableName):

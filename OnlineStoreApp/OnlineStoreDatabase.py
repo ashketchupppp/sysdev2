@@ -1,6 +1,6 @@
 import sqlite3
 from sqlite3.dbapi2 import IntegrityError
-from src.SQLiteDB import SQLiteDB, SQL
+from OnlineStoreApp.SQLiteDB import SQLiteDB, SQL
 
 
 class OnlineStoreDatabase:
