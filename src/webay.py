@@ -1,7 +1,6 @@
 import uuid
-import random
+import logging
 from flask import Flask, json, jsonify
-app = Flask(__name__)
 
 def Items():
     return [
@@ -62,7 +61,6 @@ def generateOrders():
     for i in range(len(users)):
         selectedItems = []
         for i in range(numItems):
-            print(itemIndex)
             selectedItems.append(items[itemIndex])
             itemIndex += 1
         orders.append({
@@ -79,14 +77,21 @@ def generateOrders():
             itemIndex = 0
     return orders
 
-@app.route('/orders')
-def orderRoute():
-    orders = generateOrders()
-    return jsonify(orders)
+def runWebay(host, port, logLevel=logging.INFO, debug=False):
+    app = Flask(__name__)
+    app.logger.setLevel(logLevel)
+    
+    @app.route('/orders')
+    def orderRoute():
+        orders = generateOrders()
+        return jsonify(orders)
 
-@app.route('/listings')
-def itemRoute():
-    return jsonify(Items())
+    @app.route('/listings')
+    def itemRoute():
+        return jsonify(Items())
+    
+    app.debug = False
+    app.run(host=host, port=port)   
 
 if __name__ == '__main__':
-    app.run()
+    runWebay("127.0.0.1", 5000, debug=True)

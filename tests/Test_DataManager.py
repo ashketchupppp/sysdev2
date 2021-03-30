@@ -1,12 +1,14 @@
 import unittest
 import os
-import json
+import logging
 from functools import reduce
+import threading
 
 import context
 from src.DataManager import DataManager
 from src.OnlineStoreDatabase import OnlineStoreDatabase
 from src.Util import getFileContents
+from src.webay import runWebay
 
 def removeLeftOverDbFiles():
     leftOverDB = [path for path in os.listdir() if ".db" in path]
@@ -24,11 +26,14 @@ class DataManagerUnitTest(unittest.TestCase):
         They return predictable data for testing, so there should be no issues.
     """
     dm = None
+    webayThread = None
+    webayHost = "127.0.0.1"
+    webayPort = 5000
     testConfig = {
         "databaseFile" : ":memory:",
         "apis" : {
             "Ebay" : {
-                "apiRoot" : "http://localhost:5000"
+                "apiRoot" : f"http://{webayHost}:{webayPort}"
             }
         }
     }
@@ -80,6 +85,15 @@ class DataManagerUnitTest(unittest.TestCase):
         DataManagerUnitTest.dm.addCustomer("John Doe", "johndoe@email.com")
         customersAfterAddingCustomer = DataManagerUnitTest.dm.getCustomers()
         self.assertEqual(1, len(customersAfterAddingCustomer) - len(customersBeforeAddingCustomer))
+
+    @classmethod
+    def setUpClass(cls):
+        # start webay as a separate thread, we can't run these tests without it
+        DataManagerUnitTest.webayThread = threading.Thread(target=runWebay, args=(DataManagerUnitTest.webayHost, DataManagerUnitTest.webayPort))
+        # by setting it to a daemon thread, it will be terminated when the main thread dies
+        DataManagerUnitTest.webayThread.setDaemon(True)
+        DataManagerUnitTest.webayThread.start()
+        return super().setUpClass()
 
     def setUp(self):
         removeLeftOverDbFiles()
