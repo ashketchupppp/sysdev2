@@ -1,6 +1,7 @@
 import os.path
 import json
 from sqlite3.dbapi2 import IntegrityError, OperationalError
+import asyncio
 
 from OnlineStoreApp.Util import *
 from OnlineStoreApp.OnlineStoreDatabase import OnlineStoreDatabase
@@ -116,8 +117,11 @@ class DataManager:
     
     # Stored Data
     
-    def getUnprocessedOrders(self):
-        return self.onlineStoreDatabase.getUnprocessedOrders()
+    def getUnprocessedOrders(self, asDict=False):
+        if asDict:
+            return [dict(row) for row in self.onlineStoreDatabase.getUnprocessedOrders()]
+        else:
+            return self.onlineStoreDatabase.getUnprocessedOrders()
     
     def getOrderPackingList(self, orderID):
         return self.onlineStoreDatabase.getOrderPackingList(orderID)
@@ -133,6 +137,9 @@ class DataManager:
     
     def getCustomers(self):
         return self.onlineStoreDatabase.getCustomers()
+    
+    def getOrder(self, orderID):
+        return self.onlineStoreDatabase.getOrder(orderID)
     
     
     # Adding new data

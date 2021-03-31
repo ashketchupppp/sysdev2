@@ -1,95 +1,99 @@
-class Struct:
-    """ In JavaScript you can load dictionaries as JavaScript objects and access their values
-        using dot notation "class.attribute" instead of "class['attribute']".
-        There's no functional difference between the two, however the dot notation is alot nicer to read.
-        
-        This is Utility class that can be created from a dictionary.
-        Every item in the dictionary is added to this class's __dict__, thus being able to be
-        accessed using dot notation. All nested dictionaries are also converted into Structs, so you could do this:
-            exampleDict = {
-                "a" : 1,
-                "b" : {
-                    "c" : "string"
-                }
-            }
-            d = Struct(**exampleDict)
+from configparser import Error
+from inspect import trace
+import sys
+import os
+from pathlib import Path
+import traceback
+import functools
+
+from kivy.app import App, Builder
+from kivy.uix.textinput import TextInput
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.button import Button
+from kivy.uix.recycleview import RecycleView
+from kivy.properties import ListProperty
+from kivy.uix.popup import Popup
+from kivy.core.clipboard import Clipboard
+from kivy.uix.boxlayout import BoxLayout
+
+def catch_exceptions(job_func):
+    @functools.wraps(job_func)
+    def wrapper(*args, **kwargs):
+        try:
+            job_func(*args, **kwargs)
+        except:
+            e = traceback.format_exc()
+            print(e)
+            errorMessage = ErrorPopup(title="An error occurred", 
+                                      contentText=e)
+            errorMessage.open()
+    return wrapper
+
+class ErrorPopup(Popup):
+    class Content(BoxLayout):
+        def __init__(self, parent, contentText, **kwargs):
+            super(ErrorPopup.Content, self).__init__(**kwargs)
+            self.textInput = TextInput(text=contentText)
+            self.copyButton = Button(text='Copy to clipboard')
+            self.exitButton = Button(text='Click to close')
             
-            # both of these work
-            print(d.b.c)
-            print(d["b"]["c"])
+            self.exitButton.bind(on_press=parent.dismiss)
+            self.copyButton.bind(on_press=self.copyError)
+            
+            self.add_widget(self.textInput)
+            self.add_widget(self.copyButton)
+            self.add_widget(self.exitButton)
         
-        You can use it in place of an actual dictionary because it implements all the magic methods a dict does!
-        I'm basically just adding dot notation to the python dictionary :)
-    """
-    def __init__(self, **kwargs):
-        for kw in kwargs.keys():
-            if type(kwargs[kw]) == dict:
-                setattr(self, kw, Struct(**kwargs[kw]))
-            else:
-                setattr(self, kw, kwargs[kw])
+        def copyError(self, instance):
+            Clipboard.copy(self.textInput.text)
     
-    def __setitem__(self, key, item):
-        self.__dict__[key] = item
+    def __init__(self, contentText, **kwargs):
+        super(ErrorPopup, self).__init__(**kwargs)
+        self.content = ErrorPopup.Content(parent=self, contentText=contentText)
 
-    def __getitem__(self, key):
-        return self.__dict__[key]
+class OrderList(RecycleView):
+    def __init__(self, **kwargs):
+        super(OrderList, self).__init__(**kwargs)
+        self.data = []
+    
+    def update(self, data):
+        for item in data:
+            self.data.append({'text' : f'Order {item["id"]}'})
+        self.refresh_from_data()
 
-    def __repr__(self):
-        return repr(self.__dict__)
-
-    def __len__(self):
-        return len(self.__dict__)
-
-    def __delitem__(self, key):
-        del self.__dict__[key]
-
-    def clear(self):
-        return self.__dict__.clear()
-
-    def copy(self):
-        return self.__dict__.copy()
-
-    def has_key(self, k):
-        return k in self.__dict__
-
-    def update(self, *args, **kwargs):
-        return self.__dict__.update(*args, **kwargs)
-
-    def keys(self):
-        return self.__dict__.keys()
-
-    def values(self):
-        return self.__dict__.values()
-
-    def items(self):
-        return self.__dict__.items()
-
-    def pop(self, *args):
-        return self.__dict__.pop(*args)
-
-    def __cmp__(self, dict_):
-        return self.__cmp__(self.__dict__, dict_)
-
-    def __contains__(self, item):
-        return item in self.__dict__
-
-    def __iter__(self):
-        for item in self.__dict__:
-            if type(item) == Struct:
-                yield dict(item)
-            else:
-                yield item
-
-    def __unicode__(self):
-        return unicode(repr(self.__dict__))
+class ReloadButton(Button):
+    def __init__(self, text="Reload", **kwargs):
+        super().__init__(text=text, **kwargs)
 
 
-exampleDict = {
-    "a" : 1,
-    "b" : {
-        "c" : "string"
-    }
-}
+class OrderScreen(GridLayout):
+    unprocessedOrders = ListProperty()
+    
+    def __init__(self, **kwargs):
+        super(OrderScreen, self).__init__(**kwargs)
+        self.register_event_type('on_start_reload')
+        self.cols = 2
+        self.reloadButton = ReloadButton()
+        self.orderList = OrderList()
+        
+        self.reloadButton.bind(on_press=self.on_start_reload)
+        # self.bind(unprocessedOrders=self.orderList.update) I have no idea why this won't call update :(
 
-d = Struct(**exampleDict)
-print(dict(d))
+        self.add_widget(self.orderList)
+        self.add_widget(self.reloadButton)
+
+    @catch_exceptions
+    def on_start_reload(self, instance):
+        OrderScreen.unprocessedOrders = [{'text' : 'test'}]
+        self.orderList.update(OrderScreen.unprocessedOrders)
+
+class OnlineStoreApp(App):
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def build(self):
+        return OrderScreen()
+
+if __name__ == '__main__':
+    OnlineStoreApp().run()
