@@ -1,2 +1,2 @@
-from App import OnlineStoreApp
+from OnlineStoreApp.App import OnlineStoreApp
 OnlineStoreApp().run()
