@@ -2,3 +2,6 @@ __pycache__
 .venv
 *.db
 *.pyc
+*.spec
+build
+dist
