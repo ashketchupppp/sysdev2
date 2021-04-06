@@ -1,10 +1,10 @@
 import unittest
 import os
 import sqlite3
+import asyncio
 
-import context
-from OnlineStoreApp.SQLiteDB import SQL, SQLiteDB
-from OnlineStoreApp.OnlineStoreDatabase import OnlineStoreDatabase
+from data.SQLiteDB import SQL, SQLiteDB
+from data.OnlineStoreDatabase import OnlineStoreDatabase
 
 class SQLiteDB_UnitTests(unittest.TestCase):
     db = None
@@ -24,7 +24,7 @@ class SQLiteDB_UnitTests(unittest.TestCase):
         SQLiteDB_UnitTests.db.close()
         del SQLiteDB_UnitTests.db
         return super().tearDown()
-    
+
     def test_select(self):
         result = SQLiteDB_UnitTests.db.select(OnlineStoreDatabase.customerTable, ["*"])
         self.assertTrue(SQLiteDB.rowListContainsRow(result, {"name":"John", "email": "johnsemail@email.com"}))

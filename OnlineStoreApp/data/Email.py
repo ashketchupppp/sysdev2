@@ -1,5 +1,4 @@
 import smtplib, ssl
-import sqlite3
 
 class EmailTemplate:
     @classmethod

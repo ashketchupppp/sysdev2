@@ -1,6 +1,6 @@
 import unittest
 
-import context
+
 
 class OnlineStoreOnlineStoreAppUnitTest(unittest.TestCase):
     pass

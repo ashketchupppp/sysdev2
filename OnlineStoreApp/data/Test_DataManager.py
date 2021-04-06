@@ -1,14 +1,10 @@
 import unittest
 import os
-import logging
 from functools import reduce
 import threading
 
-import context
-from OnlineStoreApp.DataManager import DataManager
-from OnlineStoreApp.OnlineStoreDatabase import OnlineStoreDatabase
-from OnlineStoreApp.Util import getFileContents
-from OnlineStoreApp.webay import runWebay
+from data.DataManager import DataManager
+from data.webay import runWebay
 
 def removeLeftOverDbFiles():
     leftOverDB = [path for path in os.listdir() if ".db" in path]

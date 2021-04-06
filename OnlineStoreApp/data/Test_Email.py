@@ -5,8 +5,8 @@ import threading
 from asyncio.queues import Queue
 import asyncio
 
-import context
-from OnlineStoreApp.Email import EmailHandler, EmailTemplate
+
+from data.Email import EmailHandler, EmailTemplate
 
 
 class CustomSMTPServer(smtpd.SMTPServer):
@@ -14,8 +14,8 @@ class CustomSMTPServer(smtpd.SMTPServer):
     def setMessageQueue(self, queue : Queue):
         self.queue = queue
     
-    async def process_message(self, peer, mailfrom, rcpttos, data):
-        await self.queue.put({'peer' : peer, 'mailfrom' : mailfrom, 'rcpttos' : rcpttos, 'data' : data})
+    def process_message(self, peer, mailfrom, rcpttos, data):
+         self.queue.put({'peer' : peer, 'mailfrom' : mailfrom, 'rcpttos' : rcpttos, 'data' : data})
     
     def run(self):
         asyncore.loop()
@@ -25,10 +25,10 @@ class EmailUnitTest: # (unittest.TestCase):
     smtpPort = 1025
     smtpHost = '127.0.0.1'
     
-    async def sendEmail(self, message):
+    def sendEmail(self, message):
         emailHandler = EmailHandler("test@test.com", "password", smtpPort=EmailUnitTest.smtpPort, smtpServer=EmailUnitTest.smtpHost)
-        await emailHandler.sendEmail("tgbyou@gmail.com", message=message)
-        return await EmailUnitTest.emailQueue.get()
+        emailHandler.sendEmail("tgbyou@gmail.com", message=message)
+        return  EmailUnitTest.emailQueue.get()
     
     @classmethod
     def setUpClass(self):

@@ -3,10 +3,10 @@ import json
 from sqlite3.dbapi2 import IntegrityError, OperationalError
 import asyncio
 
-from OnlineStoreApp.Util import *
-from OnlineStoreApp.OnlineStoreDatabase import OnlineStoreDatabase
-from OnlineStoreApp.StoreAPIs import Ebay
-from OnlineStoreApp.Email import EmailHandler
+from data.Util import *
+from data.OnlineStoreDatabase import OnlineStoreDatabase
+from data.StoreAPIs import Ebay
+from data.Email import EmailHandler
 
 class DataManager:
     """
@@ -116,6 +116,7 @@ class DataManager:
         return orders
     
     # Stored Data
+
     
     def getUnprocessedOrders(self, asDict=False):
         if asDict:
@@ -140,8 +141,7 @@ class DataManager:
     
     def getOrder(self, orderID):
         return self.onlineStoreDatabase.getOrder(orderID)
-    
-    
+
     # Adding new data
     
     def addOrder(self, orderData):

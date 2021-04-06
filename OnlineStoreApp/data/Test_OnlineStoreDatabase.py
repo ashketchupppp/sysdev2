@@ -3,10 +3,10 @@ from typing import OrderedDict
 import unittest
 import sqlite3
 import os
+import asyncio
 
-import context
-from OnlineStoreApp.OnlineStoreDatabase import OnlineStoreDatabase
-from OnlineStoreApp.SQLiteDB import SQL, SQLiteDB
+from data.OnlineStoreDatabase import OnlineStoreDatabase
+from data.SQLiteDB import SQL, SQLiteDB
 
 exampleOrder = {
     "address":{

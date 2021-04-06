@@ -1,2 +1,4 @@
-from OnlineStoreApp.App import OnlineStoreApp
-OnlineStoreApp().run()
+from ui.App import OnlineStoreApp
+
+if __name__ == "__main__":
+    OnlineStoreApp().run()    

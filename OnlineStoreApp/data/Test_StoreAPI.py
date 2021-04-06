@@ -1,9 +1,9 @@
 import unittest
 
-import context
 
-from OnlineStoreApp.StoreAPIs import *
-from OnlineStoreApp.DataManager import DataManager
+
+from data.StoreAPIs import *
+from data.DataManager import DataManager
 
 class StoreAPIsUnitTest(unittest.TestCase):
     def test_getOrders(self):

@@ -5,11 +5,12 @@ import os
 from pathlib import Path
 import traceback
 import functools
+import asyncio
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../OnlineStoreApp')))
 
-from kivy.app import App, Builder
+from kivy.app import App
 from kivy.uix.textinput import TextInput
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
@@ -19,7 +20,7 @@ from kivy.uix.popup import Popup
 from kivy.core.clipboard import Clipboard
 from kivy.uix.boxlayout import BoxLayout
 
-from OnlineStoreApp.DataManager import DataManager
+from data.DataManager import DataManager
 
 def catch_exceptions(job_func):
     @functools.wraps(job_func)
@@ -121,12 +122,26 @@ class OrderScreen(GridLayout):
 
 class OnlineStoreApp(App):
     dataManager = DataManager()
+    ordersList = ListProperty([])
+    
+    def app_func(self):
+        '''Wrapper functions for the async processes.
+        '''
+        def run_wrapper():
+            # Run the Kivy UI
+             self.async_run()
+            exit(0)
+
+        return asyncio.gather(run_wrapper())
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     def build(self):
         return OrderScreen()
-
+    
 if __name__ == '__main__':
-    OnlineStoreApp().run()
+    loop = asyncio.get_event_loop()
+    onlineStoreApp = OnlineStoreApp()
+    loop.run_until_complete(onlineStoreApp.app_func())
+    loop.close()

@@ -1,7 +1,8 @@
 import sqlite3
 from sqlite3.dbapi2 import IntegrityError
-from OnlineStoreApp.SQLiteDB import SQLiteDB, SQL
+import asyncio
 
+from data.SQLiteDB import SQLiteDB, SQL
 
 class OnlineStoreDatabase:
     storeTable = 'onlineStore'
@@ -150,7 +151,7 @@ class OnlineStoreDatabase:
         return self.db.getRow(OnlineStoreDatabase.customerTable, email=email)
     
     def getOnlineStores(self):
-        return [x for x in self.db.select(OnlineStoreDatabase.storeTable)]
+        return [x for x in  self.db.select(OnlineStoreDatabase.storeTable)]
         
     def getListings(self):
         return [x for x in self.db.select(OnlineStoreDatabase.listingTable)]

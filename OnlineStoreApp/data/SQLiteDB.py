@@ -63,6 +63,8 @@ class SQL:
 
 
 class SQLiteDB:
+    """ Manages a connection to an sqlite3 database and provides functions for interacting with the database.
+    """
     def __init__(self, databaseFile):
         self.databaseFile = databaseFile
         self.connection = None
