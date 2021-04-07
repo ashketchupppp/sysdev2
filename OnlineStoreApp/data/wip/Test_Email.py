@@ -5,9 +5,9 @@ import threading
 from asyncio.queues import Queue
 import asyncio
 
+# not really sure what is going on here
 
-from data.Email import EmailHandler, EmailTemplate
-
+from wip.Email import EmailHandler, EmailTemplate
 
 class CustomSMTPServer(smtpd.SMTPServer):
 

@@ -7,6 +7,8 @@ from data.SQLiteDB import SQL, SQLiteDB
 from data.OnlineStoreDatabase import OnlineStoreDatabase
 
 class SQLiteDB_UnitTests(unittest.TestCase):
+    """ Tests the SQLiteDB class.
+    """
     db = None
     
     def setUp(self):

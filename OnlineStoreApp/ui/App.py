@@ -20,63 +20,14 @@ from kivy.uix.textinput import TextInput
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
 from kivy.uix.recycleview import RecycleView
-from kivy.properties import ListProperty
-from kivy.uix.popup import Popup
-from kivy.core.clipboard import Clipboard
-from kivy.uix.boxlayout import BoxLayout
+from kivy.properties import ListProperty, DictProperty
 
 from data.DataManager import DataManager
 from data.Util import saveForLater
+from ui.ErrorPopup import catch_exceptions
+from ui.OrderList import OrderList
+from ui.ItemList import ItemList
 
-def catch_exceptions(job_func):
-    @functools.wraps(job_func)
-    def wrapper(*args, **kwargs):
-        try:
-            job_func(*args, **kwargs)
-        except:
-            e = traceback.format_exc()
-            print(e)
-            errorMessage = ErrorPopup(title="An error occurred", 
-                                      contentText=e)
-            errorMessage.open()
-    return wrapper
-
-class ErrorPopup(Popup):
-    class Content(BoxLayout):
-        def __init__(self, parent, contentText, **kwargs):
-            super(ErrorPopup.Content, self).__init__(**kwargs)
-            self.textInput = TextInput(text=contentText)
-            self.copyButton = Button(text='Copy to clipboard')
-            self.exitButton = Button(text='Click to close')
-            
-            self.exitButton.bind(on_press=parent.dismiss)
-            self.copyButton.bind(on_press=self.copyError)
-            
-            self.add_widget(self.textInput)
-            self.add_widget(self.copyButton)
-            self.add_widget(self.exitButton)
-        
-        def copyError(self, instance):
-            Clipboard.copy(self.textInput.text)
-    
-    def __init__(self, contentText, **kwargs):
-        super(ErrorPopup, self).__init__(**kwargs)
-        self.content = ErrorPopup.Content(parent=self, contentText=contentText)
-
-class OrderListItem(Button):
-    def __init__(self, **kwargs):
-        super(OrderListItem, self).__init__(**kwargs)
-
-class OrderList(RecycleView):
-    def __init__(self, itemClickCallback, **kwargs):
-        super(OrderList, self).__init__(**kwargs)
-        self.data = []
-        self.itemClickCallback = itemClickCallback
-    
-    def update(self, instance, value):
-        for item in value:
-            self.data.append({'text' : f'Order {item["id"]}', 'on_press' : saveForLater(self.itemClickCallback, orderID=item["id"])})
-        self.refresh_from_data()
         
 class OrderWindow(GridLayout):
     def __init__(self, **kwargs):
@@ -85,6 +36,9 @@ class OrderWindow(GridLayout):
         self.rows = 2
         self.info = TextInput()
         self.add_widget(self.info)
+        
+    def update(self, instance, order):
+        self.updateAddressLabel(order)
         
     def updateAddressLabel(self, order):
         addressString = f"""{order['name']}
@@ -95,24 +49,22 @@ class OrderWindow(GridLayout):
 {order['postcode']}"""
         self.info.text = addressString
 
-class ReloadButton(Button):
-    def __init__(self, text="Reload", **kwargs):
-        super().__init__(text=text, **kwargs)
-
 class OrderScreen(GridLayout, EventDispatcher):
     unprocessed_orders = ListProperty([])
+    current_order = DictProperty()
 
     def __init__(self, parent, **kwargs):
         super(OrderScreen, self).__init__(**kwargs)
         self.parentApp = parent
         self.register_event_type('on_start_reload')
         self.cols = 2
-        self.reloadButton = ReloadButton()
+        self.reloadButton = Button(text="Reload Orders")
         self.orderList = OrderList(itemClickCallback=self.updateCurrentOrder)
         self.orderWindow = OrderWindow()
         
         self.reloadButton.bind(on_press=self.on_start_reload)
         self.bind(unprocessed_orders=self.orderList.update)
+        self.bind(current_order=self.orderWindow.update)
 
         self.add_widget(self.orderList)
         self.add_widget(self.reloadButton)
@@ -120,14 +72,16 @@ class OrderScreen(GridLayout, EventDispatcher):
         
     @catch_exceptions
     def updateCurrentOrder(self, orderID):
-        task = OnlineStoreApp.runAsync(self.parentApp.getAllOrderDetails(orderID, callback=self.orderWindow.updateAddressLabel))
-
-    @classmethod
-    def updateOrderList(self):
-        self.orderList.update()
+        task = OnlineStoreApp.runAsync(self.parentApp.getAllOrderDetails(orderID, callback=self.setCurrentOrder))
 
     def on_start_reload(self, instance):
         task = OnlineStoreApp.runAsync(self.parentApp.reload(self.setUnprocessedOrders))
+        
+    def setCurrentOrder(self, value):
+        if type(value) == Future:
+            self.current_order = value.result()
+        else:
+            self.current_order = value
 
     def setUnprocessedOrders(self, value):
         if type(value) == Future:

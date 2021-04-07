@@ -6,20 +6,22 @@ import asyncio
 from data.Util import *
 from data.OnlineStoreDatabase import OnlineStoreDatabase
 from data.StoreAPIs import Ebay
-from data.Email import EmailHandler
 
 class DataManager:
     """
-        Deals with all data processing aspects of the application.
-         - Stores the configuration and loads the configuration overrides
-         - Creates the database connection
-         - Gets all order data from external APIs
+        This is the "integrator" class of the data module,  it deals with all data processing aspects of the application.
+         - Stores the default configuration
+         - Loading the configuration overrides
+         - Creating the OnlineStoreDatabase and providing instance methods to interface with the database
+         - Setting up the API class instances
+         - Providing methods for interfacing with all the APIs
     """
     
-    configOverridesFile = "configOverrides.json"
+    rootDir = os.path.abspath(os.path.join(os.path.join(os.path.realpath(__file__), os.path.pardir), os.path.pardir))
+    configOverridesFile = f"{rootDir}\\configOverrides.json"
     
     defaultConfiguration = {
-        "databaseFile" : "onlineStoreDatabase.db",
+        "databaseFile" : f"{rootDir}\\onlineStoreDatabase.db",
         "apis" : {
             "Ebay" : {
                 "apiRoot" : "http://localhost:5000"
@@ -43,7 +45,7 @@ class DataManager:
         ],
         "email" : {
             "orderUpdateEmail" : "company@noreply.com",
-            "orderUpdatePassword" : "outfiurfkimfri" # need to figure out a way of NOT storing passwords in plaintext
+            "orderUpdatePassword" : "outfiurfkimfri" # need to figure out a way of NOT storing passwords in plaintext, I typed randomly for this password it means nothing
         }
     }
 
@@ -52,7 +54,11 @@ class DataManager:
     }
     
     def __init__(self, configFile=None, configObj=None):
-        """ If a config is not passed then attempt to load one from a file
+        """ Class constructor.
+            
+            If a configFile (str) is passed then it is read as a JSON file and loaded as the config
+            If no configFile is passed then one with default values is created at the root of the application, read as a JSON file and loaded as the config
+            If a configObj (dict) is passed then it is loaded as the config and no configFile is written 
         """
         if configFile != None:
             if not os.path.isfile(configFile):
@@ -64,6 +70,7 @@ class DataManager:
             self.createConfig(DataManager.configOverridesFile)
             config = json.loads(getFileContents(DataManager.configOverridesFile))
         self.loadFromConfig(config)
+        
         self.loadDatabase()
         self.createAPIs()
         
@@ -81,6 +88,8 @@ class DataManager:
     # Address Labels
     
     async def printAddressLabel(self, orderID, outputFile):
+        """ Writes an address label for the passed order into the passed outputFile
+        """
         order = await self.onlineStoreDatabase.getOrder(orderID)
         customer = await self.onlineStoreDatabase.getCustomer(order['email'])
         label = f"""{customer['name']}
@@ -94,7 +103,9 @@ class DataManager:
     # Getting Data
     
     async def reload(self):
-        """ Queries all configured APIs and updates the internal database with new listings, customers and orders """
+        """ Queries all configured APIs and updates the internal database with new listings, customers and orders 
+            Any orders with id fields that are already in the database will not be added.
+        """
         listings = await self.getApiListings()
         for listing in listings:
             self.onlineStoreDatabase.addListing(itemID=listing['name'], storeID=listing['storeID'], price=listing['price'])
@@ -104,12 +115,16 @@ class DataManager:
             self.onlineStoreDatabase.addOrder(order)
     
     async def getApiListings(self):
+        """ Queries all configured APIs for listings and compiles the results into a single list
+        """
         listings = []
         for api in self.apis:
             listings += self.apis[api].getListings()
         return listings
     
     async def getApiOrders(self):
+        """ Queries all configured APIs for orders and compiles the results into a single list
+        """
         orders = []
         for api in self.apis:
             orders += self.apis[api].getOrders()
@@ -118,15 +133,21 @@ class DataManager:
     # Stored Data
     
     async def getUnprocessedOrders(self, asDict=False):
+        """ Queries the OnlineStoreDatabase for a list of orders that are marked as "unprocessed"
+        """
         if asDict:
             return [dict(row) for row in self.onlineStoreDatabase.getUnprocessedOrders()]
         else:
             return self.onlineStoreDatabase.getUnprocessedOrders()
     
     async def getOrderPackingList(self, orderID):
+        """ Queries the OnlineStoreDatabase for a list of items in an order
+        """
         return self.onlineStoreDatabase.getOrderPackingList(orderID)
     
     async def getAllOrderListingLinks(self):
+        """ Queries the OnlineStoreDatabase for all entries in the orderListingLink table
+        """
         return self.onlineStoreDatabase.getAllOrderListingLinks()
     
     async def getOrders(self):
@@ -161,19 +182,28 @@ class DataManager:
     # Setup
         
     def loadDatabase(self):
+        """ Creates the onlineStoreDatabase file.
+            Anything that needs to be done before or after creating this needs to be put here.
+        """
         self.onlineStoreDatabase = OnlineStoreDatabase(self.databaseFile)
     
     def createAPIs(self):
+        """ Goes through the self.apis variable (which is gotten from the configuration) and creates all configured API objects.
+            When each API object is instantiated it is passed its unpacked dictionary loaded from the configuration.
+            If an API is configured but not listed in DataManager.supportedApis it will not be loaded.
+        """
         apiObjs = {}
         for api in self.apis:
-            apiObjs[api] = DataManager.supportedApis[api](**self.apis[api])
+            if api in DataManager.supportedApis:
+                apiObjs[api] = DataManager.supportedApis[api](**self.apis[api])
         self.apis = apiObjs
             
     def createConfig(self, filepath):
         writeToFile(filepath, json.dumps(dict(DataManager.defaultConfiguration)))
             
     def loadFromConfig(self, configDict):
-        """ Load the config from the filepath passed, use defaults if any values are absent from the config file """
+        """ Load the config from the filepath passed, use defaults if any values are absent from the config file
+        """
         for key in DataManager.defaultConfiguration:
             if not key in self.__dict__:
                 setattr(self, key, DataManager.defaultConfiguration[key])

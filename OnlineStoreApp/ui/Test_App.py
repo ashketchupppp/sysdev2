@@ -1,7 +1,5 @@
 import unittest
 
-
-
 class OnlineStoreOnlineStoreAppUnitTest(unittest.TestCase):
     pass
 

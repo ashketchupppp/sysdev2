@@ -5,6 +5,16 @@ import asyncio
 from data.SQLiteDB import SQLiteDB, SQL
 
 class OnlineStoreDatabase:
+    """ A class that handles all database operations for this applications sqlite3 database.
+        It uses data.SQLiteDB to do all the heavy lifting but it does everything that 
+        is specific to this application (rather than being a generaic sqlite3 database implementation).
+        
+        It:
+         - Creates the database if it can't find one
+         - Creates the database tables if it can't find them
+         - Provides a high-level interface for operating on the sqlite3 database
+    """
+    
     storeTable = 'onlineStore'
     listingTable = 'listing'
     orderTable = 'orders'
@@ -125,10 +135,14 @@ class OnlineStoreDatabase:
     ## Getting Data
     
     def getUnprocessedOrders(self):
+        """ Returns a list of all items in the order table that are marked as unprocessed
+        """
         return [x for x in self.db.select(OnlineStoreDatabase.orderTable, 
                                           whereDict={"status" : "unprocessed"})]
     
     def getOrderPackingList(self, orderID):
+        """ Returns a list of items in an order
+        """
         # get the item listings for the order
         itemListingsForOrder = [x for x in self.db.select(OnlineStoreDatabase.orderListingLinkTable, 
                                                   whereDict={ "orderID" : orderID })]

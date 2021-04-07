@@ -89,7 +89,8 @@ class DataManagerUnitTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # start webay as a separate thread, we can't run these tests without it
+        """ Start a new thread to run the webay testing API in it.
+        """
         loop = asyncio.new_event_loop()
         DataManagerUnitTest.webayThread = threading.Thread(target=runWebay, args=(DataManagerUnitTest.webayHost, DataManagerUnitTest.webayPort))
         # by setting it to a daemon thread, it will be terminated when the main thread dies

@@ -47,7 +47,7 @@ def removeLeftOverDbFiles():
             pass
     
 class OnlineStoreDatabaseUnitTest(unittest.TestCase):
-    """ Tests the OnlineStoreDatabase's low level functions
+    """ Tests the OnlineStoreDatabase class
     """
     db = None
     

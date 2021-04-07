@@ -1,6 +1,8 @@
 import smtplib, ssl
 
 class EmailTemplate:
+    """ Helper class for generating email template strings using classmethods.
+    """
     @classmethod
     def orderProcessedEmail(self, customerName, items, orderRef):
         itemString = ""
@@ -21,6 +23,10 @@ Thank you for choosing us.
     
 
 class EmailHandler:
+    """ !!! This class is a work in progress and not used anywhere !!!
+        A class to handle sending emails to customers using an smtp server.
+    """
+    
     def __init__(self, orderUpdateEmail, 
                  orderUpdatePassword, 
                  smtpServer = "smtp.gmail.com", 

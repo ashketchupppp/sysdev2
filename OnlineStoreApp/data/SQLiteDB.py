@@ -64,6 +64,7 @@ class SQL:
 
 class SQLiteDB:
     """ Manages a connection to an sqlite3 database and provides functions for interacting with the database.
+        This is for interacting with an sqlite3 database in a generic manner rather than one that is specific to this application
     """
     def __init__(self, databaseFile):
         self.databaseFile = databaseFile
@@ -90,7 +91,11 @@ class SQLiteDB:
     # Utility Class methods for general ease of handling sqlite3.Row objects
         
     @classmethod
-    def rowContainsColumnsWithValues(self, row, keyValueDict):
+    def rowContainsColumnsWithValues(self, row : sqlite3.Row, keyValueDict, ignoreExtras=True):
+        """ Returns True if the passed row object contains all the keys and values in the keyValueDict
+            Note that you can check for a single key value pair, or you can check for all of them. 
+            Any extra keys in the row object will be ignored.
+        """
         containsAll = True
         for key in keyValueDict:
             try:
@@ -102,6 +107,9 @@ class SQLiteDB:
     
     @classmethod
     def rowListContainsRow(self, rowList, keyValueDict):
+        """ Calls rowContainsColumnsWithValues on each sqlite3.Row object in the rowList, 
+        returns True if it finds a row that contains all the key/value pairs passed
+        """
         for row in rowList:
             if self.rowContainsColumnsWithValues(row, keyValueDict):
                 return True
@@ -110,6 +118,11 @@ class SQLiteDB:
     # Mid-Level Database Functions
     
     def getRow(self, table, columns=["*"], whereValues=None, **wherekwvalues):
+        """ Retrieves a row from a table.
+            Columns should be a list of columns (str)
+            whereValues should be a dictionary of key/value pairs to use in the where statement
+            the whereValues can also be passed as keyword arguments, leaving whereValues as None
+        """
         if whereValues == None:
             whereValues = dict(wherekwvalues)
         # return self.select(table, columns, whereValues)
@@ -120,6 +133,8 @@ class SQLiteDB:
             return None
     
     def add(self, table, dictvalues=None, **kwvalues):
+        """ Inserts a row into the passed table with the passed dictvalues.
+        """
         if dictvalues == None:
             values = dict(kwvalues)
         else:
