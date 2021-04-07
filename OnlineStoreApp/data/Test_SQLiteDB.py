@@ -32,12 +32,12 @@ class SQLiteDB_UnitTests(unittest.TestCase):
     def test_getRow(self):
         # test getting a simple row
         result = SQLiteDB_UnitTests.db.getRow(OnlineStoreDatabase.customerTable, ["*"], email="johnsemail@email.com")
-        self.assertTrue(SQLiteDB.rowListContainsRow(result, {"name":"John", "email": "johnsemail@email.com"}))
+        self.assertTrue(SQLiteDB.rowContainsColumnsWithValues(result, {"name":"John", "email": "johnsemail@email.com"}))
         
     def test_update(self):
         SQLiteDB_UnitTests.db.update(OnlineStoreDatabase.customerTable, {"name" : "John Smith"}, {"email" : "johnsemail@email.com"})
         result = SQLiteDB_UnitTests.db.getRow(OnlineStoreDatabase.customerTable, ["*"], email="johnsemail@email.com")
-        self.assertTrue(SQLiteDB.rowListContainsRow(result, {"name":"John Smith", "email": "johnsemail@email.com"}))
+        self.assertTrue(SQLiteDB.rowContainsColumnsWithValues(result, {"name":"John Smith", "email": "johnsemail@email.com"}))
         
         
         

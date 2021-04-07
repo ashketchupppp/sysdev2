@@ -44,6 +44,7 @@ class OnlineStoreDatabase:
             },
             orderTable : {
                 "id" : "INTEGER PRIMARY KEY AUTOINCREMENT",
+                "storesOrderID" : "VARCHAR UNIQUE",
                 "status": "VARCHAR",
                 "line1" : "VARCHAR",
                 "line2" : "VARCHAR",
@@ -89,6 +90,11 @@ class OnlineStoreDatabase:
         return self.db.add(OnlineStoreDatabase.orderListingLinkTable, orderID=orderID, itemID=itemID, storeID=storeID)
     
     def addOrder(self, orderDict):
+        # make sure we don't have this order already
+        order = self.getOrder(orderDict['id'])
+        if type(order) == sqlite3.Row:
+            return None
+        
         # if we don't have this customer yet, add them to the database
         if not self.getCustomer(orderDict['user']['email']):
             self.addCustomer(orderDict['user']['name'], orderDict['user']['email'])
@@ -96,9 +102,10 @@ class OnlineStoreDatabase:
         # if we don't have this listing yet, add it to the database
         for item in orderDict['items']:
             self.addListing(item['name'], orderDict['storeID'], item['price'])
-        
+
         # add the order to the database
         dbOrderDict = {
+                "storesOrderID" : orderDict["id"],
                 "status": "unprocessed",
                 "line1" : orderDict['address']['addressLineOne'],
                 "line2" : orderDict['address']['addressLineTwo'],
@@ -139,7 +146,10 @@ class OnlineStoreDatabase:
         return [x for x in self.db.select(OnlineStoreDatabase.orderTable)]
     
     def getOrder(self, orderID):
-        return self.db.getRow(OnlineStoreDatabase.orderTable, id=orderID)
+        if type(orderID) == str:
+            return self.db.getRow(OnlineStoreDatabase.orderTable, storesOrderID=orderID)
+        else:
+            return self.db.getRow(OnlineStoreDatabase.orderTable, id=int(orderID))
     
     def getItems(self):
         return [x for x in self.db.select(OnlineStoreDatabase.itemTable)]

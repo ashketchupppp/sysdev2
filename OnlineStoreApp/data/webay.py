@@ -50,6 +50,19 @@ def Users():
         {'id': 'dec16e70-8f75-47e6-9aeb-9fc6de1f1041', 'name': 'Francisco Shannon', 'email': 'FranciscoShannon@hotmail.com'},
         {'id': '0e862ec6-030d-438f-bbf7-3f050bfa27b8', 'name': 'Jaidon Plant', 'email': 'JaidonPlant@hotmail.com'}
     ]
+    
+def orderUUIDs():
+    return ['3b51b0ae-3772-4193-9da9-e87a0ff6120d', 
+            '098fd6b5-3472-4f29-a5b6-c92d1a63cf15', 
+            '4929e4fc-4f05-4e06-81b9-5ed0a7293dfe', 
+            '3b35d826-1f57-4251-bae6-5b49bfd7b320', 
+            'a1d91ff5-2f9b-46a0-8e67-d84b813005eb', 
+            '45a9960b-cec4-475d-bfd9-4310caa14519', 
+            'e1450679-ef61-451e-be42-04c48789aee9', 
+            '9958eb2a-6c4e-4cdb-b993-37e09653d6c0', 
+            'da156c3c-4c1d-4d5a-afab-17c4db2e4ca8', 
+            '49ba00c5-8f63-48a2-9a2c-95dc815f5c46', 
+            'a2c6af84-01e9-472b-8c4c-1b537313518e']
 
 def generateOrders():
     orders = []
@@ -58,13 +71,14 @@ def generateOrders():
     items = Items()
     users = Users()
     addresses = Addresses()
-    for i in range(len(users)):
+    orderIDs = orderUUIDs()
+    for i in range(len(orderIDs)):
         selectedItems = []
-        for i in range(numItems):
+        for y in range(numItems):
             selectedItems.append(items[itemIndex])
             itemIndex += 1
         orders.append({
-            "id" : uuid.uuid4(),
+            "id" : orderIDs[i],
             "user" : users[i],
             "address" : addresses[i],
             "items" : selectedItems

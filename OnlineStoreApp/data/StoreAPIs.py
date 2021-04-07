@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import json
 import asyncio
 
-from data.Util import doGet
+from data.Util import doGet, doGetAsync
 
 class StoreAPI(ABC):
     """
@@ -81,14 +81,12 @@ class Ebay(StoreAPI):
 
     def getOrders(self):
         orderData = json.loads(doGet(f"{self.apiRoot}/orders"))
-        # orderData = json.loads(doGet(f"{self.apiRoot}/orders"))
         for order in orderData:
             order['storeID'] = Ebay.name
         return orderData
     
     def getListings(self):
         itemData = json.loads(doGet(f"{self.apiRoot}/listings"))
-        # itemData = json.loads(doGet(f"{self.apiRoot}/listings"))
         for item in itemData:
             item['storeID'] = Ebay.name
         return itemData

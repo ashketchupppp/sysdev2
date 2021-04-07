@@ -1,11 +1,16 @@
+from asyncio.futures import Future
+from asyncio.locks import Event
 from configparser import Error
 from inspect import trace
+import sqlite3
 import sys
 import os
 from pathlib import Path
 import traceback
 import functools
 import asyncio
+
+from kivy.event import EventDispatcher
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../OnlineStoreApp')))
@@ -21,6 +26,7 @@ from kivy.core.clipboard import Clipboard
 from kivy.uix.boxlayout import BoxLayout
 
 from data.DataManager import DataManager
+from data.Util import saveForLater
 
 def catch_exceptions(job_func):
     @functools.wraps(job_func)
@@ -62,14 +68,14 @@ class OrderListItem(Button):
         super(OrderListItem, self).__init__(**kwargs)
 
 class OrderList(RecycleView):
-    def __init__(self, itemClickEvent, **kwargs):
+    def __init__(self, itemClickCallback, **kwargs):
         super(OrderList, self).__init__(**kwargs)
         self.data = []
-        self.itemClickEvent = itemClickEvent
+        self.itemClickCallback = itemClickCallback
     
-    def update(self, data):
-        for item in data:
-            self.data.append({'text' : f'Order {item["id"]}'})
+    def update(self, instance, value):
+        for item in value:
+            self.data.append({'text' : f'Order {item["id"]}', 'on_press' : saveForLater(self.itemClickCallback, orderID=item["id"])})
         self.refresh_from_data()
         
 class OrderWindow(GridLayout):
@@ -80,68 +86,107 @@ class OrderWindow(GridLayout):
         self.info = TextInput()
         self.add_widget(self.info)
         
-    def update(self, order):
-        self.info.text = str(order)
+    def updateAddressLabel(self, order):
+        addressString = f"""{order['name']}
+{order['streetNameAndNumber']}
+{order['line1']}
+{order['line2']}
+{order['country']}
+{order['postcode']}"""
+        self.info.text = addressString
 
 class ReloadButton(Button):
     def __init__(self, text="Reload", **kwargs):
         super().__init__(text=text, **kwargs)
 
-class OrderScreen(GridLayout):
-    unprocessedOrders = ListProperty([])
-    
-    def __init__(self, **kwargs):
+class OrderScreen(GridLayout, EventDispatcher):
+    unprocessed_orders = ListProperty([])
+
+    def __init__(self, parent, **kwargs):
         super(OrderScreen, self).__init__(**kwargs)
+        self.parentApp = parent
         self.register_event_type('on_start_reload')
-        self.register_event_type('on_order_item_selected')
         self.cols = 2
         self.reloadButton = ReloadButton()
-        self.orderList = OrderList(itemClickEvent=self.on_order_item_selected)
+        self.orderList = OrderList(itemClickCallback=self.updateCurrentOrder)
         self.orderWindow = OrderWindow()
         
         self.reloadButton.bind(on_press=self.on_start_reload)
-        # \/ This doesn't work \/
-        # self.bind(unprocessedOrders=self.orderList.update)
+        self.bind(unprocessed_orders=self.orderList.update)
 
         self.add_widget(self.orderList)
         self.add_widget(self.reloadButton)
         self.add_widget(self.orderWindow)
         
     @catch_exceptions
-    def on_order_item_selected(self, instance):
-        pass
-        # order = OnlineStoreApp.dataManager.getOrder(instance.id)
-        # self.orderWindow.update(order)
+    def updateCurrentOrder(self, orderID):
+        task = OnlineStoreApp.runAsync(self.parentApp.getAllOrderDetails(orderID, callback=self.orderWindow.updateAddressLabel))
 
-    @catch_exceptions
+    @classmethod
+    def updateOrderList(self):
+        self.orderList.update()
+
     def on_start_reload(self, instance):
-        OnlineStoreApp.dataManager.reload()
-        OrderScreen.unprocessedOrders = OnlineStoreApp.dataManager.getUnprocessedOrders(asDict=True)
-         # calling update manually, couldn't figure out how to get it be called when unprocessedOrders changes
-        self.orderList.update(OrderScreen.unprocessedOrders)
+        task = OnlineStoreApp.runAsync(self.parentApp.reload(self.setUnprocessedOrders))
+
+    def setUnprocessedOrders(self, value):
+        if type(value) == Future:
+            self.unprocessed_orders = value.result()
+        else:
+            self.unprocessed_orders = value
 
 class OnlineStoreApp(App):
-    dataManager = DataManager()
-    ordersList = ListProperty([])
+    """ The main kivy app, acts as an interface between the screens and the DataManager
+    """
+    eventLoop = None
     
+    def __init__(self, loop, **kwargs):
+        super().__init__(**kwargs)
+        OnlineStoreApp.eventLoop = loop
+        self.dataManager = DataManager()
+        
     def app_func(self):
         '''Wrapper functions for the async processes.
         '''
-        def run_wrapper():
+        async def run_wrapper():
             # Run the Kivy UI
-             self.async_run()
+            await self.async_run()  
             exit(0)
 
         return asyncio.gather(run_wrapper())
     
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    @classmethod
+    def runAsync(self, coro) -> asyncio.Task:
+        return OnlineStoreApp.eventLoop.create_task(coro)
 
     def build(self):
-        return OrderScreen()
+        return OrderScreen(parent=self)
+    
+    async def reload(self, callback):
+        await self.dataManager.reload()
+        callback(await self.dataManager.getUnprocessedOrders(asDict=True))
+        
+    async def getAllOrderDetails(self, orderID, callback=None):
+        order = dict(await self.dataManager.getOrder(orderID))
+        customer = await self.dataManager.getCustomer(order['customerEmail'])
+        order['name'] = customer['name']
+        order['items'] = await self.dataManager.getOrderPackingList(orderID)
+        if callback != None:
+            callback(dict(order))
+        else:
+            return dict(order)
+        
+    async def getOrder(self, orderID, callback=None):
+        order = await self.dataManager.getOrder(orderID)
+        if callback != None:
+            callback(dict(order))
+        else:
+            return dict(order)
+    
+def main():
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(OnlineStoreApp(loop).app_func())
+    loop.close()
     
 if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    onlineStoreApp = OnlineStoreApp()
-    loop.run_until_complete(onlineStoreApp.app_func())
-    loop.close()
+    main()

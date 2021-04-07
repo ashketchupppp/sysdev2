@@ -155,6 +155,12 @@ class OnlineStoreDatabaseUnitTest(unittest.TestCase):
                                                                             "storeID" : order['storeID']}), 
                             msg=ordersListingLinks)
             linkID += 1
+        
+        # try to add the order again, make sure it doesn't appear twice
+        ordersBeforeDuplicate = OnlineStoreDatabaseUnitTest.db.getOrders()
+        orderID = OnlineStoreDatabaseUnitTest.db.addOrder(order)           
+        ordersAfterDuplicate = OnlineStoreDatabaseUnitTest.db.getOrders()
+        self.assertEqual(len(ordersBeforeDuplicate), len(ordersAfterDuplicate))
             
     def test_getUnprocessedOrders(self):
         """ getUnprocessedOrders should return a list of unprocessed orders
@@ -169,7 +175,9 @@ class OnlineStoreDatabaseUnitTest(unittest.TestCase):
             
         # add some orders
         orderOne = OnlineStoreDatabaseUnitTest.db.addOrder(order)
+        order['id'] = "abcd"
         orderTwo = OnlineStoreDatabaseUnitTest.db.addOrder(order)
+        order['id'] = "efgh"
         orderThree = OnlineStoreDatabaseUnitTest.db.addOrder(order)
         
         # mark one of the orders as shipped

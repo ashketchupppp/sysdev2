@@ -80,9 +80,9 @@ class DataManager:
         
     # Address Labels
     
-    def printAddressLabel(self, orderID, outputFile):
-        order = self.onlineStoreDatabase.getOrder(orderID)
-        customer = self.onlineStoreDatabase.getCustomer(order['email'])
+    async def printAddressLabel(self, orderID, outputFile):
+        order = await self.onlineStoreDatabase.getOrder(orderID)
+        customer = await self.onlineStoreDatabase.getCustomer(order['email'])
         label = f"""{customer['name']}
 {order['streetNameAndNumber']}
 {order['line1']}
@@ -93,64 +93,69 @@ class DataManager:
         
     # Getting Data
     
-    def reload(self):
+    async def reload(self):
         """ Queries all configured APIs and updates the internal database with new listings, customers and orders """
-        listings = self.getAllListings()
+        listings = await self.getApiListings()
         for listing in listings:
             self.onlineStoreDatabase.addListing(itemID=listing['name'], storeID=listing['storeID'], price=listing['price'])
 
-        orders = self.getAllOrders()
+        orders = await self.getApiOrders()
         for order in orders:
             self.onlineStoreDatabase.addOrder(order)
     
-    def getAllListings(self):
+    async def getApiListings(self):
         listings = []
         for api in self.apis:
             listings += self.apis[api].getListings()
         return listings
     
-    def getAllOrders(self):
+    async def getApiOrders(self):
         orders = []
         for api in self.apis:
             orders += self.apis[api].getOrders()
         return orders
     
     # Stored Data
-
     
-    def getUnprocessedOrders(self, asDict=False):
+    async def getUnprocessedOrders(self, asDict=False):
         if asDict:
             return [dict(row) for row in self.onlineStoreDatabase.getUnprocessedOrders()]
         else:
             return self.onlineStoreDatabase.getUnprocessedOrders()
     
-    def getOrderPackingList(self, orderID):
+    async def getOrderPackingList(self, orderID):
         return self.onlineStoreDatabase.getOrderPackingList(orderID)
     
-    def getAllOrderListingLinks(self):
+    async def getAllOrderListingLinks(self):
         return self.onlineStoreDatabase.getAllOrderListingLinks()
     
-    def getOrders(self):
+    async def getOrders(self):
         return self.onlineStoreDatabase.getOrders()
+
+    async def getListings(self):
+        return self.onlineStoreDatabase.getListings()
     
-    def getItems(self):
+    async def getItems(self):
         return self.onlineStoreDatabase.getItems()
     
-    def getCustomers(self):
+    async def getCustomers(self):
         return self.onlineStoreDatabase.getCustomers()
     
-    def getOrder(self, orderID):
+    async def getCustomer(self, email):
+        return self.onlineStoreDatabase.getCustomer(email)
+    
+    async def getOrder(self, orderID):
         return self.onlineStoreDatabase.getOrder(orderID)
 
     # Adding new data
     
-    def addOrder(self, orderData):
+    async def addOrder(self, orderData):
         return self.onlineStoreDatabase.addOrder(orderData)
             
-    def addCustomer(self, name, email):
+    async def addCustomer(self, name, email):
         return self.onlineStoreDatabase.addCustomer(name, email)
     
-    def addListing(self, itemID, storeID, price):
+    async def addListing(self, itemID, storeID, price):
         return self.onlineStoreDatabase.addListing(itemID, storeID, price)
         
     # Setup

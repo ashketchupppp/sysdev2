@@ -112,7 +112,12 @@ class SQLiteDB:
     def getRow(self, table, columns=["*"], whereValues=None, **wherekwvalues):
         if whereValues == None:
             whereValues = dict(wherekwvalues)
-        return self.select(table, columns, whereValues)
+        # return self.select(table, columns, whereValues)
+        result = self.select(table, columns, whereValues)
+        if len(result) == 1:
+            return result[0]
+        else:
+            return None
     
     def add(self, table, dictvalues=None, **kwvalues):
         if dictvalues == None:

@@ -2,6 +2,7 @@ import unittest
 import os
 from functools import reduce
 import threading
+import asyncio
 
 from data.DataManager import DataManager
 from data.webay import runWebay
@@ -43,37 +44,37 @@ class DataManagerUnitTest(unittest.TestCase):
     def test_addsAllItemsToDatabaseFromConfig(self):
         """ The DataManager should add items to the database from the configured list
         """
-        result = DataManagerUnitTest.dm.onlineStoreDatabase.getItems()
+        result = asyncio.run(DataManagerUnitTest.dm.getItems())
         self.assertEqual(len(self.dm.itemList), len(result))
         
     def test_addsListingsFromAPIs(self):
         """ When reload is called, the DataManager should go through all the APIs and add their item listings to the database if they aren't there already
         """
-        DataManagerUnitTest.dm.reload()
-        result = DataManagerUnitTest.dm.onlineStoreDatabase.getListings()
-        self.assertEqual(len(DataManagerUnitTest.dm.getAllListings()), len(result))
+        asyncio.run(DataManagerUnitTest.dm.reload())
+        result = asyncio.run(DataManagerUnitTest.dm.getListings())
+        self.assertEqual(len(asyncio.run(DataManagerUnitTest.dm.getApiListings())), len(result))
 
     def test_addsNewCustomersFromAPIs(self):
         """ When reload is called, the DataManager should go through all the new orders from the APIs and add any new customers to the database
         """
-        DataManagerUnitTest.dm.reload()
-        result = DataManagerUnitTest.dm.onlineStoreDatabase.getCustomers()
-        customers = set([key['user']['email'] for key in DataManagerUnitTest.dm.getAllOrders()])
+        asyncio.run(DataManagerUnitTest.dm.reload())
+        result = asyncio.run(DataManagerUnitTest.dm.getCustomers())
+        customers = set([key['user']['email'] for key in asyncio.run(DataManagerUnitTest.dm.getApiOrders())])
         self.assertEqual(len(customers), len(result))
 
     def test_addsNewOrdersFromAPIs(self):
         """ When reload is called, the DataManager should go through all the new orders from the APIs and add any new orders to the database
         """
-        DataManagerUnitTest.dm.reload()
-        result = DataManagerUnitTest.dm.onlineStoreDatabase.getOrders()
-        self.assertEqual(len(DataManagerUnitTest.dm.getAllOrders()), len(result))
+        asyncio.run(DataManagerUnitTest.dm.reload())
+        result = asyncio.run(DataManagerUnitTest.dm.getOrders())
+        self.assertEqual(len(asyncio.run(DataManagerUnitTest.dm.getApiOrders())), len(result))
 
     def test_addsLinkBetweenOrderAndListing(self):
         """ When reload is called, the DataManager should go through all the new orders from the APIs and link them to listings
         """
-        DataManagerUnitTest.dm.reload()
-        result = DataManagerUnitTest.dm.onlineStoreDatabase.getAllOrderListingLinks()
-        orders = DataManagerUnitTest.dm.getAllOrders()
+        asyncio.run(DataManagerUnitTest.dm.reload())
+        result = asyncio.run(DataManagerUnitTest.dm.getAllOrderListingLinks())
+        orders = asyncio.run(DataManagerUnitTest.dm.getApiOrders())
         # one link per item in an order, count the number of links expected
         numLinks = reduce(lambda x, y : x + y, [len(x['items']) for x in orders])
         self.assertEqual(numLinks, len(result))
@@ -81,14 +82,15 @@ class DataManagerUnitTest(unittest.TestCase):
     def test_addCustomerAddsACustomer(self):
         """ The addCustomer method should add a customer
         """
-        customersBeforeAddingCustomer = DataManagerUnitTest.dm.getCustomers()
-        DataManagerUnitTest.dm.addCustomer("John Doe", "johndoe@email.com")
-        customersAfterAddingCustomer = DataManagerUnitTest.dm.getCustomers()
+        customersBeforeAddingCustomer = asyncio.run(DataManagerUnitTest.dm.getCustomers())
+        asyncio.run(DataManagerUnitTest.dm.addCustomer("John Doe", "johndoe@email.com"))
+        customersAfterAddingCustomer = asyncio.run(DataManagerUnitTest.dm.getCustomers())
         self.assertEqual(1, len(customersAfterAddingCustomer) - len(customersBeforeAddingCustomer))
 
     @classmethod
     def setUpClass(cls):
         # start webay as a separate thread, we can't run these tests without it
+        loop = asyncio.new_event_loop()
         DataManagerUnitTest.webayThread = threading.Thread(target=runWebay, args=(DataManagerUnitTest.webayHost, DataManagerUnitTest.webayPort))
         # by setting it to a daemon thread, it will be terminated when the main thread dies
         DataManagerUnitTest.webayThread.setDaemon(True)
