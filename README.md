@@ -2,6 +2,57 @@
 
 This is a readme file for the OnlineStoreApp for the Systems Development 2 coursework.
 
+## Technical Details
+
+### Itemised list of pre-requisites
+
+1. Python 3.3 or newer available to you on the command-line
+
+### Initial setup
+
+Go to the root directory of this project and execute the following:
+```
+python -m venv .venv
+cd .venv/Scripts
+activate
+cd ../../
+pip install -r requirements.txt
+```
+or use this nice one-liner
+```
+python -m venv .venv & cd .venv/Scripts & activate & cd ../../ & pip install -r requirements.txt
+```
+
+Before you attempt to run any of the code, you should activate the virtual environment with
+```
+cd .venv/Scripts & activate & cd ../../
+```
+Make sure this is done every time you want to run the program.
+
+### Running tests
+
+All the tests are written in separate files from the code they're testing, all test files are prefixed with `Test_`.
+To run all the tests you can simply execute the following from the root directory
+```
+python -m unittest discover
+```
+
+### Running the application
+
+Before you run the application you need to run the `webay.py` file, you can do this like any other python file
+```
+python webay.py
+```
+
+To run the application, you can run any of the following
+```
+python OnlineStoreApp
+-- or --
+python OnlineStoreApp/__main__.py
+-- or --
+python OnlineStoreApp/ui/App.py
+```
+
 ## Implementation Notes
 
 Since this is a prototype application, there are obviously going to be a few things different between this and the final product.
@@ -52,50 +103,5 @@ If I had the time, I would have implemented these things.
 3. Automated address label printing
 4. Properly testing all StoreAPI child classes
 5. A custom email screen
-
-## Technical Details
-
-### Initial setup
-
-First you will need a python 3 installation that has the `venv` module installed.
-Then, go to the root directory of this project and execute the following:
-```
-python -m venv .venv
-cd .venv/Scripts
-activate
-cd ../../
-pip install -r requirements.txt
-```
-or use this nice one-liner
-```
-python -m venv .venv & cd .venv/Scripts & activate & cd ../../ & pip install -r requirements.txt
-```
-
-Before you attempt to run any of the code, you should activate the virtual environment with
-```
-cd .venv/Scripts & activate & cd ../../
-```
-
-### Running tests
-
-All the tests are written in separate files from the code they're testing, all test files are prefixed with `Test_`.
-To run all the tests you can simply execute the following from the top-level directory
-```
-python -m unittest discover
-```
-
-### Running the application
-
-Before you run the application you need to run the `webay.py` file, you can do this like any other python file
-```
-python webay.py
-```
-
-To run the application, you can run any of the following
-```
-python OnlineStoreApp
--- or --
-python OnlineStoreApp/__main__.py
--- or --
-python OnlineStoreApp/ui/App.py
-```
+6. Finish and use the ConfigObject class
+7. Figure out how to package this thing with PyInstaller
