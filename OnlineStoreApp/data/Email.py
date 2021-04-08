@@ -13,7 +13,7 @@ class EmailTemplate:
             
         return f"""Hello, {customerName}
 
-Your order is now being processed.
+Your order has now been processed and will be shipped.
 
 {itemString}
 
