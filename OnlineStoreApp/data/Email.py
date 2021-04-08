@@ -8,8 +8,8 @@ class EmailTemplate:
         itemString = ""
         longestItemName = int(max([len(item['name']) for item in items]))
         for item in items:
-            paddedItemName = item['name'] + " "*(longestItemName - len(item['name'])) + " | "
-            itemString += f'{paddedItemName}{item["price"]}\n'
+            paddedItemName = item['name'] + " "*(longestItemName - len(item['name']))
+            itemString += f'{paddedItemName}'
             
         return f"""Hello, {customerName}
 

@@ -1,5 +1,6 @@
 import os.path
 import json
+import asyncio
 
 from data.Util import *
 from data.OnlineStoreDatabase import OnlineStoreDatabase
@@ -97,6 +98,16 @@ class DataManager:
 {order['postcode']}
 {order['country']}"""
         writeToFile(outputFile, label)
+        
+    # Updating Data
+    
+    async def setOrderToShipped(self, orderID):
+        order = await self.getOrder(orderID)
+        if order != None and order['status'] != "shipped":
+            await self.onlineStoreDatabase.setOrderToShipped(orderID)
+            return True
+        else:
+            return False
         
     # Getting Data
     
@@ -208,3 +219,11 @@ class DataManager:
         
         for key in configDict:
             setattr(self, key, configDict[key])
+            
+    async def waitForCoroutineQueue(self, queue):
+        while True:
+            if queue.empty():
+                await asyncio.sleep(0.1)
+            else:
+                coro = await queue.get()
+                await coro

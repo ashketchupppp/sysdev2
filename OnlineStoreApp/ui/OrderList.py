@@ -14,6 +14,7 @@ class OrderList(RecycleView):
         self.itemClickCallback = itemClickCallback
     
     def update(self, instance, value):
+        self.data = []
         for item in value:
             self.data.append({'text' : f'Order {item["id"]}', 'on_press' : saveForLater(self.itemClickCallback, orderID=item["id"])})
         self.refresh_from_data()

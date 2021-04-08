@@ -79,7 +79,7 @@ class OnlineStoreDatabase:
     
     ## Updating Data
     
-    def setOrderToShipped(self, orderID):
+    async def setOrderToShipped(self, orderID):
         self.db.update(OnlineStoreDatabase.orderTable, {"status" : "shipped"}, {"id" : orderID})
     
     ## Adding Data
