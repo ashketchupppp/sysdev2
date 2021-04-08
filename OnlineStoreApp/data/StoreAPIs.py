@@ -1,8 +1,22 @@
 from abc import ABC, abstractmethod
 import json
 import asyncio
+import functools
 
 from data.Util import doGet, doGetAsync
+
+def apiCall(name):
+    """ Decorator for api calls, adds extra information to the result of the API call.
+    """
+    def actual_decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            result = func(*args, **kwargs)
+            for i in result:
+                i['storeID'] = name
+            return result
+        return wrapper
+    return actual_decorator
 
 class StoreAPI(ABC):
     """
@@ -14,14 +28,6 @@ class StoreAPI(ABC):
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
-            
-    def apiCall(self, apiCallFunction):
-        def wrapper():
-            result = apiCallFunction()
-            for i in result:
-                i['storeID'] = self.name
-            return result
-        return wrapper
     
     @abstractmethod
     def getOrders(self):
@@ -79,14 +85,12 @@ class Ebay(StoreAPI):
             if not configKey in self.__dict__:
                 setattr(self, configKey, Ebay.defaultConfiguration[configKey])
 
+    @apiCall(name)
     def getOrders(self):
         orderData = json.loads(doGet(f"{self.apiRoot}/orders"))
-        for order in orderData:
-            order['storeID'] = Ebay.name
         return orderData
-    
+
+    @apiCall(name)
     def getListings(self):
         itemData = json.loads(doGet(f"{self.apiRoot}/listings"))
-        for item in itemData:
-            item['storeID'] = Ebay.name
         return itemData

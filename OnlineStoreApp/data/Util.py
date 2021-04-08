@@ -1,5 +1,6 @@
 from urllib.request import urlopen
 import aiohttp
+import functools
 
 def getFileContents(filepath):
     fileHandle = open(filepath, "r")

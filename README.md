@@ -24,14 +24,12 @@ You can change
 3. A section that makes it easy to configure new APIs and give them their own options
 4. A section to customise the (non-functional) automated email system
 
-### What isn't implemented
+## TODO List
+
 If I had the time, I would have implemented these things. 
 1. Displaying a list of items for a selected order
 2. Button for changing an order from `unprocessed` to `shipped`
-
-## TODO List
-
-1. Get the proportions on the UI correct
+3. Get the proportions on the UI correct
 
 ## Technical Details
 

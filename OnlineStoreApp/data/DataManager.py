@@ -1,7 +1,5 @@
 import os.path
 import json
-from sqlite3.dbapi2 import IntegrityError, OperationalError
-import asyncio
 
 from data.Util import *
 from data.OnlineStoreDatabase import OnlineStoreDatabase
@@ -16,7 +14,7 @@ class DataManager:
          - Setting up the API class instances
          - Providing methods for interfacing with all the APIs
     """
-    
+
     rootDir = os.path.abspath(os.path.join(os.path.join(os.path.realpath(__file__), os.path.pardir), os.path.pardir))
     configOverridesFile = f"{rootDir}\\configOverrides.json"
     

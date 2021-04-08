@@ -1,13 +1,6 @@
 from asyncio.futures import Future
-from asyncio.locks import Event
-from configparser import Error
-from inspect import trace
-import sqlite3
 import sys
 import os
-from pathlib import Path
-import traceback
-import functools
 import asyncio
 
 from kivy.event import EventDispatcher
@@ -19,26 +12,26 @@ from kivy.app import App
 from kivy.uix.textinput import TextInput
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
-from kivy.uix.recycleview import RecycleView
 from kivy.properties import ListProperty, DictProperty
 
 from data.DataManager import DataManager
-from data.Util import saveForLater
 from ui.ErrorPopup import catch_exceptions
 from ui.OrderList import OrderList
 from ui.ItemList import ItemList
 
-        
 class OrderWindow(GridLayout):
     def __init__(self, **kwargs):
         super(OrderWindow, self).__init__(**kwargs)
         self.cols = 2
         self.rows = 2
         self.info = TextInput()
+        self.items = ItemList()
         self.add_widget(self.info)
+        self.add_widget(self.items)
         
     def update(self, instance, order):
         self.updateAddressLabel(order)
+        self.updateItems([{'text' : f'{item["name"]} - Location: {item["location"]}'} for item in order['items']])
         
     def updateAddressLabel(self, order):
         addressString = f"""{order['name']}
@@ -48,6 +41,10 @@ class OrderWindow(GridLayout):
 {order['country']}
 {order['postcode']}"""
         self.info.text = addressString
+        
+    def updateItems(self, items):
+        self.items.data = items
+        self.items.refresh_from_data()
 
 class OrderScreen(GridLayout, EventDispatcher):
     unprocessed_orders = ListProperty([])
@@ -60,22 +57,35 @@ class OrderScreen(GridLayout, EventDispatcher):
         self.cols = 2
         self.reloadButton = Button(text="Reload Orders")
         self.orderList = OrderList(itemClickCallback=self.updateCurrentOrder)
-        self.orderWindow = OrderWindow()
+        self.addressLabelText = TextInput()
+        self.itemList = ItemList()
         
         self.reloadButton.bind(on_press=self.on_start_reload)
         self.bind(unprocessed_orders=self.orderList.update)
-        self.bind(current_order=self.orderWindow.update)
+        self.bind(current_order=self.updateAddressLabel)
+        self.bind(current_order=self.itemList.updateItems)
 
         self.add_widget(self.orderList)
         self.add_widget(self.reloadButton)
-        self.add_widget(self.orderWindow)
+        self.add_widget(self.addressLabelText)
+        self.add_widget(self.itemList)
         
     @catch_exceptions
     def updateCurrentOrder(self, orderID):
         task = OnlineStoreApp.runAsync(self.parentApp.getAllOrderDetails(orderID, callback=self.setCurrentOrder))
 
+    @catch_exceptions
     def on_start_reload(self, instance):
         task = OnlineStoreApp.runAsync(self.parentApp.reload(self.setUnprocessedOrders))
+        
+    def updateAddressLabel(self, instance, order):
+        addressString = f"""{order['name']}
+{order['streetNameAndNumber']}
+{order['line1']}
+{order['line2']}
+{order['country']}
+{order['postcode']}"""
+        self.addressLabelText.text = addressString
         
     def setCurrentOrder(self, value):
         if type(value) == Future:
@@ -108,7 +118,7 @@ class OnlineStoreApp(App):
             exit(0)
 
         return asyncio.gather(run_wrapper())
-    
+
     @classmethod
     def runAsync(self, coro) -> asyncio.Task:
         return OnlineStoreApp.eventLoop.create_task(coro)
@@ -119,7 +129,7 @@ class OnlineStoreApp(App):
     async def reload(self, callback):
         await self.dataManager.reload()
         callback(await self.dataManager.getUnprocessedOrders(asDict=True))
-        
+    
     async def getAllOrderDetails(self, orderID, callback=None):
         order = dict(await self.dataManager.getOrder(orderID))
         customer = await self.dataManager.getCustomer(order['customerEmail'])

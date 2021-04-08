@@ -1,26 +1,27 @@
-from abc import ABC, abstractclassmethod, abstractmethod
+from abc import ABC, abstractmethod
 
 class ConfigObject(ABC):
     """ !!! This class is a work in progress and not used anywhere !!!
         This is an abstract class whose purpose is to allow an inheritor to be created from a JSON file.
         This would automate the process of loading and dumping of the application configuration.
         
-        The idea is that you provide a dictionary (that could be loaded from a JSON file) and the classes are spun up from it
+        The idea is that you provide a dictionary (that could be loaded from a JSON file) and the classes are created with the variables passed
         MyClass(**{
             "x" : 8,
             "MyOtherClass" : {
                 "b" : "No"
             }
         })
-        Would produce a an instance of MyClass that has the variable "x" and another config object called "MyOtherClass".
+        Would produce an instance of MyClass that has the variable "x" and another config object called "MyOtherClass".
         
-        This would make it much easier to load things to and from configuration files, automatically adding new configurable options to the config file, 
-        then we could just make things like the StoreAPI, DataManager and OnlineStoreDatabase inherit from ConfigObject and then they can all be easily created.
+        This would automate the process of adding new configurable options to the configuration JSON file.
+        Instead of adding logic to create objects and give them values from a config, 
+        you define a ConfigObject and it's configurable variables are automatically added to the configuration file.
         
         NOTE
             This implementation is half-baked =P
         
-        TODO:
+        TODO
             Need to think about how to deal with config objects that may be hidden in lists
     """
     ConfigObjects = []
@@ -83,21 +84,22 @@ class MyClass(ConfigObject):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-t = MyClass()
-a = MyClass(**{"x" : 9})
-s = MyClass(**{
-    "x" : 8,
-    "MyOtherClass" : {
-        "b" : "No"
-    }
-})
-x = MyClass(**{
-    "x" : 8,
-    "MyOtherClass" : {}
-})
-print(t.x)
-print(a.x)
-print(s.MyOtherClass)
-print(s.MyOtherClass.b)
-print(x.MyOtherClass)
-print(x.MyOtherClass.b)
+if __name__ == "__main__":
+    t = MyClass()
+    a = MyClass(**{"x" : 9})
+    s = MyClass(**{
+        "x" : 8,
+        "MyOtherClass" : {
+            "b" : "No"
+        }
+    })
+    x = MyClass(**{
+        "x" : 8,
+        "MyOtherClass" : {}
+    })
+    print(t.x)
+    print(a.x)
+    print(s.MyOtherClass)
+    print(s.MyOtherClass.b)
+    print(x.MyOtherClass)
+    print(x.MyOtherClass.b)
